@@ -17,9 +17,11 @@ public static class ImpactoEventos
         ["Peaton Detectado"] =   0,   // alerta informativa, sin impacto en puntos
         ["Señal Ignorada"]   = -20,
         ["Carril Invadido"]  = -15,
-        ["Frenado Brusco"]   = -10,
-        ["Exceso Velocidad"] = -25,
-        ["Otro"]             =   0
+        ["Frenado Brusco"]      = -10,
+        ["Aceleración Brusca"]  =  -8,
+        ["Giro Brusco"]         =  -8,
+        ["Exceso Velocidad"]    = -25,
+        ["Otro"]                =   0
     };
 
     /// <summary>Devuelve el impacto del tipo de evento; 0 si el tipo no tiene puntaje definido.</summary>
