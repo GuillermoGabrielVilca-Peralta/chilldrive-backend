@@ -12,4 +12,5 @@ public interface IEventoService
     Task<EventoResponseDto?>                             GetById(int id);
     Task<(bool success, string mensaje, int? id)>        Registrar(EventoRequestDto dto);
     Task<(bool success, string mensaje)>                 Eliminar(int id);
+    Task<EstadisticasConduccionDto>                      GetEstadisticasUsuario(int usuarioId);
 }

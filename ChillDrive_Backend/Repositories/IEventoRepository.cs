@@ -11,4 +11,5 @@ public interface IEventoRepository
     Task<Evento?>      GetById(int id);
     Task<int>          Add(Evento evento);
     Task               Delete(Evento evento);
+    Task<List<(string Tipo, int TotalImpacto, int Cantidad)>> GetImpactoNegativoPorTipoParaUsuario(int usuarioId);
 }

@@ -73,6 +73,16 @@ public class EventoController : ApiControllerBase
         return CreatedAtAction(nameof(GetById), new { id }, new { mensaje, id });
     }
 
+    // GET api/evento/usuario/5/estadisticas → score por categoría del usuario
+    [HttpGet("usuario/{usuarioId:int}/estadisticas")]
+    public async Task<IActionResult> GetEstadisticasUsuario(int usuarioId)
+    {
+        if (usuarioId != UsuarioActualId)
+            return Forbid();
+        var stats = await _service.GetEstadisticasUsuario(usuarioId);
+        return Ok(stats);
+    }
+
     // DELETE api/evento/5  → solo administradores
     [Authorize(Roles = Roles.Admin)]
     [HttpDelete("{id:int}")]

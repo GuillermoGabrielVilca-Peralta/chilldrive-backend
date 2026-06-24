@@ -20,7 +20,8 @@ public class EventoService : IEventoService
     [
         "Peaton Detectado", "Señal Respetada", "Señal Ignorada",
         "Carril Mantenido", "Carril Invadido", "Frenado Brusco",
-        "Exceso Velocidad", "Distancia Segura", "Otro"
+        "Exceso Velocidad", "Distancia Segura", "Otro",
+        "Aceleración Brusca", "Giro Brusco", "Uso Celular"
     ];
 
     public EventoService(
@@ -148,5 +149,44 @@ public class EventoService : IEventoService
 
         await _repo.Delete(evento);
         return (true, "Evento eliminado correctamente.");
+    }
+
+    // -------------------------------------------------------------------------
+    // ESTADÍSTICAS POR CATEGORÍA — score 0-100 por hábito de conducción.
+    // Fórmula: score = max(0, 100 + suma_de_impactos_negativos_de_esa_categoria).
+    // Ejemplo: 3 frenazos × (-10) → score = max(0, 100-30) = 70.
+    // Si no hay eventos de ese tipo: score = 100 (conducción perfecta en esa categoría).
+    // -------------------------------------------------------------------------
+    public async Task<EstadisticasConduccionDto> GetEstadisticasUsuario(int usuarioId)
+    {
+        var datos = await _repo.GetImpactoNegativoPorTipoParaUsuario(usuarioId);
+
+        int ImpactoTipo(string tipo) =>
+            datos.FirstOrDefault(d => d.Tipo == tipo).TotalImpacto;
+
+        int CantidadTipo(string tipo) =>
+            datos.FirstOrDefault(d => d.Tipo == tipo).Cantidad;
+
+        int Score(string tipo) => Math.Max(0, 100 + ImpactoTipo(tipo));
+
+        var categorias = new List<ScoreCategoriaDto>
+        {
+            new() { Nombre = "Velocidad",    Score = Score("Exceso Velocidad"),   Cantidad = CantidadTipo("Exceso Velocidad")   },
+            new() { Nombre = "Frenado",      Score = Score("Frenado Brusco"),     Cantidad = CantidadTipo("Frenado Brusco")     },
+            new() { Nombre = "Aceleración",  Score = Score("Aceleración Brusca"), Cantidad = CantidadTipo("Aceleración Brusca") },
+            new() { Nombre = "Giros",        Score = Score("Giro Brusco"),        Cantidad = CantidadTipo("Giro Brusco")        },
+            new() { Nombre = "Celular",      Score = Score("Uso Celular"),        Cantidad = CantidadTipo("Uso Celular")        },
+        };
+
+        var scoreGeneral = categorias.Count > 0
+            ? (int)categorias.Average(c => c.Score)
+            : 100;
+
+        return new EstadisticasConduccionDto
+        {
+            ScoreGeneral           = scoreGeneral,
+            TotalEventosNegativos  = datos.Sum(d => d.Cantidad),
+            Categorias             = categorias
+        };
     }
 }

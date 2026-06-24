@@ -63,4 +63,20 @@ public class EventoRepository : IEventoRepository
         _context.Eventos.Remove(evento);
         await _context.SaveChangesAsync();
     }
+
+    public async Task<List<(string Tipo, int TotalImpacto, int Cantidad)>> GetImpactoNegativoPorTipoParaUsuario(int usuarioId)
+    {
+        var resultados = await _context.Eventos
+            .Where(e => e.ViajeId.HasValue && e.Viaje!.UsuarioId == usuarioId && e.ImpactoPuntaje < 0)
+            .GroupBy(e => e.TipoEvento)
+            .Select(g => new
+            {
+                Tipo         = g.Key,
+                TotalImpacto = g.Sum(e => e.ImpactoPuntaje),
+                Cantidad     = g.Count()
+            })
+            .ToListAsync();
+
+        return resultados.Select(r => (r.Tipo, r.TotalImpacto, r.Cantidad)).ToList();
+    }
 }
