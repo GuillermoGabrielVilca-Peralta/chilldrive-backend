@@ -1,0 +1,68 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project
+
+ChillDrive is an ASP.NET Core (net10.0) Web API for an intelligent vehicular detection / driver-scoring system. Drivers register vehicles and cameras, take trips (`viajes`) that the AI scores 0–100, earn ChillDrive points, and redeem them for partner (`aliado`) rewards. Backed by PostgreSQL via EF Core (Npgsql). All domain naming and API messages are in Spanish.
+
+## Commands
+
+Run from the repo root (`D:\ChillDrive\Backend\ChillDrive_Backend`).
+
+```powershell
+dotnet build                                          # build
+dotnet run --project ChillDrive_Backend               # run (Swagger UI served at /swagger in Development)
+dotnet ef migrations add <Name> --project ChillDrive_Backend   # add EF migration
+dotnet ef database update --project ChillDrive_Backend         # apply migrations
+dotnet test                                           # run unit tests (or use the IDE test runner)
+```
+
+Tests live in `ChillDrive_Backend.Tests` (xUnit + Moq): service-level unit tests that mock the repositories and use `FakeUnitOfWork`, so they need no database. `ChillDrive_Backend\ChillDrive_Backend.http` holds sample requests. No linter is configured.
+
+## Architecture
+
+Strict three-layer flow, one set of files per domain entity:
+
+**Controller → Service → Repository → `ApplicationDbContext`**
+
+- **Controllers** (`Controllers/`) are thin: route HTTP, deserialize a `RequestDto`, call the service, map the result to an `IActionResult`. Routes are `api/[controller]`.
+- **Services** (`Services/` interface + `Services/Implements/`) hold all business logic and validation only. Cross-entity validation lives here (e.g. `ViajeService.Iniciar` injects `IUsuarioRepository` and `IVehiculoRepository` to verify ownership before creating). Services must NOT contain entity↔DTO mapping code.
+- **Mappings** (`Models/DTOs/Mappings/`) hold all entity↔DTO conversion as static extension methods (no AutoMapper): `entity.ToResponse()`, `dto.ToEntity()`, and `dto.ApplyTo(entity)` for updates. Services call these instead of mapping inline. When adding/changing a DTO field, update the corresponding mapper here — not the service.
+- **Constants** (`Models/Constants/`) hold shared business rules referenced by more than one layer: `NivelPuntos.Calcular(puntosHistoricos)` (regla de niveles usada por el repo al hacer upsert) y `MovimientoTipos` (tipos de movimiento de puntos). Agregar aquí cualquier valor de dominio que se necesite en múltiples capas.
+- **Repositories** (`Repositories/` interface + `Repositories/Implements/`) wrap EF Core data access only; no business rules.
+
+### Conventions
+
+- **Service result tuples**: mutating service methods return `(bool success, string mensaje[, int? id])` instead of throwing. Controllers translate `success`/`mensaje` into `Ok` / `BadRequest` / `NotFound` with `new { mensaje }` JSON bodies. Follow this pattern for new operations rather than exceptions.
+- **DTOs**: every entity has request and response DTOs under `Models/DTOs/Requests` and `Models/DTOs/Responses`. Entities are never returned directly from controllers. Note the **response DTO C# namespace is `...DTOs.Response`** (singular) even though the folder is `Responses` — match the existing `using`.
+- **Business endpoints** beyond CRUD use `PATCH` with an action suffix, e.g. `PATCH api/viaje/{id}/finalizar`, `.../cancelar`.
+- **Registration**: every new repository and service must be registered as `Scoped` in `Program.cs` (the `Repositorios` and `Servicios` blocks). DI by interface throughout.
+
+### Data model
+
+- Models and `ApplicationDbContext` were **scaffolded from an existing PostgreSQL database** (db-first). `OnModelCreating` carries explicit snake_case table/column mappings, PG defaults (`CURRENT_TIMESTAMP`, `gen_random_bytes`), the `pgcrypto` extension, and two read-only DB views mapped as keyless entities (`VRankingConductore`, `VSuscripcionesActiva`), exposed read-only through their own layer set: `RankingController` (`GET api/ranking`, leaderboard) and `SuscripcionActivaController` (`GET api/suscripcionactiva`, admin). Treat the database schema as the source of truth; prefer regenerating/aligning over hand-editing mappings.
+- Points system: `puntos_usuario` (per-user balance + level) is updated in real time by `EventoService` (each AI event applies `ImpactoEventos` points and writes the immutable `movimientos_puntos` ledger); `ViajeService.Finalizar` no longer credits points (avoids double-counting). `canjes` (redemptions) carry a pgcrypto-generated QR code.
+
+### Configuration
+
+Connection string lives in `appsettings.Development.json` (gitignored) under `ConnectionStrings.DefaultConnection`. `Program.cs` reads it via `GetConnectionString("DefaultConnection")`. The `OnConfiguring` scaffold override was removed. Secrets go in `appsettings.Development.json`; in prod use environment variables.
+
+---
+
+## Flutter Frontend
+
+App at `D:\ChillDrive\Frontend\chilldrive_app`. Feature-complete, tested on physical device.
+
+**Key packages:** `dio` (HTTP), `flutter_secure_storage` (JWT), `ultralytics_yolo` (YOLO on-device), `geolocator` (GPS), `flutter_foreground_task` (persistent notification), `wakelock_plus`, `flutter_tts` (voice alerts), `qr_flutter`.
+
+**Config:** backend URL in `lib/config/app_config.dart` → `AppConfig.apiBaseUrl`. Single place to change per environment.
+
+**Architecture:** all HTTP via `ApiService` (`lib/api_service.dart`); setState only (no global state manager). Screens under `lib/screens/`.
+
+**Gotchas:**
+- Foreground service class MUST be `com.pravera.flutter_foreground_task.service.ForegroundService` (v8.x — `ForegroundTaskService` doesn't exist).
+- TFLite models go as **Flutter assets** (`pubspec.yaml` `assets:`), NOT in `android/app/src/main/assets`.
+- `kotlin.incremental=false` in `android/gradle.properties` (project on D:, pub cache on C: → different roots crash incremental Kotlin).
+- PiP mode: `MainActivity.kt` overrides `onUserLeaveHint` → `enterPictureInPictureMode`; controlled via MethodChannel `chilldrive/pip`; state flows back via EventChannel `chilldrive/pip_status`.
+- `background_service.dart` holds the foreground task entry point (`@pragma('vm:entry-point')`) to break the circular import: main → main_screen → viaje_tab → deteccion_screen → main.

@@ -1,0 +1,50 @@
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       chilldrive
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data          # datos persistentes
+      - ./db/init:/docker-entrypoint-initdb.d    # scripts SQL ejecutados al crear la BD
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d chilldrive"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    ports:
+      - "5432:5432"   # expón solo si necesitas conectarte con pgAdmin desde el host
+
+  # ── API ChillDrive ──────────────────────────────────────────────────────────
+  api:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development          # cambiar a Production en despliegue real
+                                                   # (Development habilita Swagger en /swagger)
+      # Conexión a la BD — apunta al servicio "db" definido arriba
+      ConnectionStrings__DefaultConnection: >-
+        Host=db;Database=chilldrive;Username=postgres;
+        Password=${POSTGRES_PASSWORD};Port=5432
+
+      # JWT
+      Jwt__SecretKey:       ${JWT_SECRET_KEY}
+      Jwt__Issuer:          ChillDriveAPI
+      Jwt__Audience:        ChillDriveCliente
+      Jwt__ExpirationHours: 24
+
+      # Correo(s) administrador. Añade más índices (__1, __2…) si necesitas varios.
+      Admin__Correos__0: ${ADMIN_CORREO:-admin@chilldrive.pe}
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

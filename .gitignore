@@ -1,0 +1,24 @@
+# ── Compilación .NET ──────────────────────────────────────────────
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+
+# ── IDE ───────────────────────────────────────────────────────────
+.vs/
+.idea/
+*.suo
+
+# ── Secretos / entorno ────────────────────────────────────────────
+# appsettings.Development.json contiene los secretos de desarrollo (contraseña de BD,
+# Jwt:SecretKey) → NO se versiona. appsettings.json SÍ se versiona (sin secretos).
+appsettings.Development.json
+secrets.json
+*.env
+.env
+
+# ── Docker / BD ───────────────────────────────────────────────────
+# Los scripts SQL de init pueden contener datos; no se versionan.
+# El README.md dentro de db/init sí se versiona.
+db/init/*.sql

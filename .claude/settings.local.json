@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($p = Get-ChildItem -Path \"C:\\\\Program Files\\\\dotnet\",\"$env:LOCALAPPDATA\\\\Microsoft\\\\dotnet\" -Filter dotnet.exe -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName; Write-Output \"PATH=$p\"; if \\($p\\) { & $p --list-sdks })"
+    ]
+  }
+}
