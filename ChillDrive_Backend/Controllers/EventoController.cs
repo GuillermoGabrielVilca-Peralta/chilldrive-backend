@@ -67,9 +67,12 @@ public class EventoController : ApiControllerBase
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] EventoRequestDto dto)
     {
-        var (success, mensaje, id) = await _service.Registrar(dto);
+        var (success, mensaje, id, duplicado) = await _service.Registrar(dto, UsuarioActualId);
         if (!success)
             return BadRequest(new { mensaje });
+        // Reenvío idempotente (ya existía): 200 OK, no se crea nada nuevo.
+        if (duplicado)
+            return Ok(new { mensaje, id });
         return CreatedAtAction(nameof(GetById), new { id }, new { mensaje, id });
     }
 

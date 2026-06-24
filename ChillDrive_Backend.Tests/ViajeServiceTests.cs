@@ -78,7 +78,8 @@ public class ViajeServiceTests
             new() { ImpactoPuntaje = -5 }
         });
 
-        var (success, _) = await _sut.Finalizar(1, new FinalizarViajeRequestDto { PuntajeConduccion = 80 });
+        // DuracionMinutos ≥ 5 para superar el mínimo (viajes más cortos se cancelan solos).
+        var (success, _) = await _sut.Finalizar(1, new FinalizarViajeRequestDto { PuntajeConduccion = 80, DuracionMinutos = 30 });
 
         Assert.True(success);
         Assert.Equal("Finalizado", viaje.Estado);

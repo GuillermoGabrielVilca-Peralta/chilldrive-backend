@@ -16,6 +16,19 @@ public class EventoRequestDto
     [MaxLength(60, ErrorMessage = "El tipo de evento no puede superar los 60 caracteres.")]
     public string   TipoEvento     { get; set; } = null!;
 
+    // Id único del evento generado en el cliente (UUID). Clave de idempotencia: un
+    // reenvío de la cola offline con el mismo IdLocal no crea un evento duplicado.
+    // Opcional: si no viene, el evento se registra sin protección de idempotencia.
+    [MaxLength(64, ErrorMessage = "El idLocal no puede superar los 64 caracteres.")]
+    public string?  IdLocal        { get; set; }
+
+    // Hora en que el cliente DETECTÓ el evento (ISO-8601 UTC). Es la hora real del
+    // hecho, no la de llegada al servidor: importa porque la cola offline puede
+    // enviarse horas después. Sirve para ordenar bien la ruta y para la defensa
+    // anti-flood. Opcional: si no viene o es inválida, el backend usa la hora actual.
+    [MaxLength(40, ErrorMessage = "La fecha de detección no puede superar los 40 caracteres.")]
+    public string?  FechaDeteccion { get; set; }
+
     // El impacto en puntos NO lo manda el cliente: lo decide el backend según el tipo de
     // evento (ver ImpactoEventos). Así se evita que se envíen puntos arbitrarios.
 

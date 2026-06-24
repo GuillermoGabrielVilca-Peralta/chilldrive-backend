@@ -211,6 +211,14 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.TipoEvento)
                 .HasMaxLength(60)
                 .HasColumnName("tipo_evento");
+            entity.Property(e => e.ClienteEventoId)
+                .HasMaxLength(64)
+                .HasColumnName("cliente_evento_id");
+            // Único solo cuando hay idLocal (índice parcial): garantiza idempotencia
+            // sin obligar a que los eventos sin cliente lo traigan.
+            entity.HasIndex(e => e.ClienteEventoId, "uq_eventos_cliente_evento_id")
+                .IsUnique()
+                .HasFilter("cliente_evento_id IS NOT NULL");
             entity.Property(e => e.ViajeId)
                 .HasComment("NULL si la detección ocurre fuera de un viaje activo")
                 .HasColumnName("viaje_id");

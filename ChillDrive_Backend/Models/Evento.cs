@@ -17,6 +17,13 @@ public partial class Evento
     public string TipoEvento { get; set; } = null!;
 
     /// <summary>
+    /// Id único generado en el cliente (UUID) para idempotencia: si llega dos veces
+    /// el mismo (reenvío de la cola offline), el evento NO se duplica. NULL para
+    /// eventos generados sin cliente (p. ej. detecciones server-side).
+    /// </summary>
+    public string? ClienteEventoId { get; set; }
+
+    /// <summary>
     /// Positivo = suma al puntaje del viaje; negativo = resta
     /// </summary>
     public int ImpactoPuntaje { get; set; }

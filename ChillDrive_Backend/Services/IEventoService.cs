@@ -10,7 +10,7 @@ public interface IEventoService
     Task<PaginadoDto<EventoResponseDto>>                 GetByViajeIdPaginado(int viajeId, int pagina, int tamano);
     Task<List<EventoResponseDto>>                        GetByCamaraId(int camaraId);
     Task<EventoResponseDto?>                             GetById(int id);
-    Task<(bool success, string mensaje, int? id)>        Registrar(EventoRequestDto dto);
+    Task<(bool success, string mensaje, int? id, bool duplicado)> Registrar(EventoRequestDto dto, int usuarioActualId);
     Task<(bool success, string mensaje)>                 Eliminar(int id);
     Task<EstadisticasConduccionDto>                      GetEstadisticasUsuario(int usuarioId);
 }

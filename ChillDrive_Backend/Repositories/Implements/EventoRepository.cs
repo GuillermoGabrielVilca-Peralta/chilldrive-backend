@@ -51,6 +51,24 @@ public class EventoRepository : IEventoRepository
         return await _context.Eventos.FindAsync(id);
     }
 
+    public async Task<Evento?> GetByClienteEventoId(string clienteEventoId)
+    {
+        return await _context.Eventos
+            .FirstOrDefaultAsync(e => e.ClienteEventoId == clienteEventoId);
+    }
+
+    // ¿Ya hay un evento de este tipo en este viaje dentro de la ventana [desde, hasta]?
+    // Se usa como defensa anti-flood: dos eventos del mismo tipo demasiado seguidos
+    // (por hora de detección) son no-físicos y se descartan.
+    public async Task<bool> ExisteEventoTipoEnVentana(int viajeId, string tipoEvento, DateTime desde, DateTime hasta)
+    {
+        return await _context.Eventos.AnyAsync(e =>
+            e.ViajeId == viajeId &&
+            e.TipoEvento == tipoEvento &&
+            e.FechaEvento >= desde &&
+            e.FechaEvento <= hasta);
+    }
+
     public async Task<int> Add(Evento evento)
     {
         await _context.Eventos.AddAsync(evento);

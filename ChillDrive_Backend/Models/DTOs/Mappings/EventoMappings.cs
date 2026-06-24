@@ -18,17 +18,20 @@ public static class EventoMappings
         FechaEvento    = e.FechaEvento
     };
 
-    // El impacto en puntos lo calcula el servicio (ImpactoEventos.Para) y se pasa aquí;
+    // El impacto en puntos (ImpactoEventos.Para) y la fecha resuelta (hora de detección
+    // validada o, en su defecto, la actual) los calcula el servicio y se pasan aquí;
     // el mapper no decide reglas de negocio, solo arma la entidad.
-    public static Evento ToEntity(this EventoRequestDto dto, int impactoPuntaje) => new()
+    public static Evento ToEntity(this EventoRequestDto dto, int impactoPuntaje, DateTime fechaEvento) => new()
     {
-        ViajeId        = dto.ViajeId,
-        CamaraId       = dto.CamaraId,
-        TipoEvento     = dto.TipoEvento,
-        ImpactoPuntaje = impactoPuntaje,
-        Latitud        = dto.Latitud,
-        Longitud       = dto.Longitud,
-        FotoEvidencia  = dto.FotoEvidencia,
-        FechaEvento    = DateTime.UtcNow
+        ViajeId         = dto.ViajeId,
+        CamaraId        = dto.CamaraId,
+        TipoEvento      = dto.TipoEvento,
+        // Normaliza vacío → null para que el índice único ignore eventos sin idLocal.
+        ClienteEventoId = string.IsNullOrWhiteSpace(dto.IdLocal) ? null : dto.IdLocal,
+        ImpactoPuntaje  = impactoPuntaje,
+        Latitud         = dto.Latitud,
+        Longitud        = dto.Longitud,
+        FotoEvidencia   = dto.FotoEvidencia,
+        FechaEvento     = fechaEvento
     };
 }
