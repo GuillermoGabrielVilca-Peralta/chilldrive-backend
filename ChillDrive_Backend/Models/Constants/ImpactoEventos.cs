@@ -20,6 +20,7 @@ public static class ImpactoEventos
         ["Frenado Brusco"]      = -10,
         ["Aceleración Brusca"]  =  -8,
         ["Giro Brusco"]         =  -8,
+        ["Uso Celular"]         = -15,
         ["Exceso Velocidad"]    = -25,
         ["Otro"]                =   0
     };
