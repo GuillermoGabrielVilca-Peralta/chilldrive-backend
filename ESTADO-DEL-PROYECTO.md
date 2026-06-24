@@ -1,7 +1,9 @@
 # ESTADO DEL PROYECTO — ChillDrive (Backend + App)
 
 > Documento de handoff. Si retomas en una sesión nueva, lee esto primero para tener todo el contexto.
-> **Estado actual:** backend feature-complete + app Flutter completa con detección on-device, segundo plano (foreground service + PiP), alertas de voz inteligentes, y todas las pantallas operativas.
+> **Estado actual:** backend feature-complete + app Flutter completa con detección on-device, segundo plano (foreground service + PiP), alertas de voz inteligentes, **telemática por sensores (frenado/aceleración/giro brusco + uso de celular)**, **score por categoría de conducción**, **mapa de ruta con eventos y coloreado por agresividad**, y todas las pantallas operativas.
+>
+> **Control de versiones:** ambos repos están en Git. Rama de trabajo actual: `feature/sensores-telematica` (en GitHub: `GuillermoGabrielVilca-Peralta/chilldrive-app`). El trabajo de telemática vive ahí; pendiente merge a `main` tras validar en celular.
 
 ---
 
@@ -59,8 +61,10 @@ lib/
   config/
     app_config.dart         ← URL del backend (cambiar aquí al pasar de entorno)
   background_service.dart   ← Entry point del foreground service (isolate Android)
-  api_service.dart          ← Cliente HTTP (Dio) + todos los endpoints; usa AppConfig
+  api_service.dart          ← Cliente HTTP (Dio) + endpoints + storage local (token, viaje, recorrido GPS)
   main.dart                 ← AuthGate: login ↔ main_screen
+  deteccion/
+    detector_conduccion.dart ← Detector de maniobras bruscas (acelerómetro + GPS); aislado de la UI
   screens/
     login_screen.dart
     registro_screen.dart
@@ -73,16 +77,17 @@ lib/
     configuracion_screen.dart
     perfil_screen.dart
     historial_screen.dart   ← Historial de viajes
-    detalle_viaje_screen.dart
-    ranking_screen.dart     ← Leaderboard con podio
+    detalle_viaje_screen.dart ← 2 tabs: General (cabecera + eventos) y Mapa (ruta + eventos)
+    ranking_screen.dart     ← 2 tabs: Ranking (podio + leaderboard) y Mi conducción (score por categoría)
     racha_screen.dart
     nivel_screen.dart
 ```
 
 **Convenciones Flutter:**
-- Toda llamada HTTP pasa por `ApiService` (importar desde `../api_service.dart`).
+- Toda llamada HTTP pasa por `ApiService` (importar desde `../api_service.dart`). `ApiService` también centraliza el storage local (`flutter_secure_storage`): token, usuario, viaje activo y recorrido GPS.
 - La URL base está en `lib/config/app_config.dart` → `AppConfig.apiBaseUrl`.
 - No hay state management global (setState directo); aceptable para este tamaño de app.
+- La lógica de sensores (umbrales, ventanas, cooldowns) vive en `lib/deteccion/detector_conduccion.dart`, NO en la pantalla. La pantalla solo cablea callbacks → TTS + `POST /api/evento`.
 - `deteccion_screen.dart` es el archivo más complejo — tiene secciones marcadas con `// ──` para navegación.
 
 ---
@@ -110,8 +115,21 @@ lib/
 - **WakeLock** (`wakelock_plus`): pantalla siempre encendida durante el viaje.
 - Mínimo 5 min para que el viaje sea válido (barra de progreso). Cooldown de 6 s entre eventos del mismo tipo.
 
+### App Flutter — telemática por sensores (`sensors_plus` + GPS)
+Detector aislado en `lib/deteccion/detector_conduccion.dart`. Usa la magnitud del acelerómetro lineal (`userAccelerometerEventStream`, 20 Hz) — independiente de cómo esté montado el celular — confirmada SIEMPRE con la velocidad/rumbo del GPS para descartar baches y vibraciones.
+- **Frenado brusco / Aceleración brusca:** pico de acelerómetro ≥ 3.5 m/s² (~0.35 g) **sostenido ≥ 150 ms (3 muestras)** + caída/subida de velocidad GPS ≥ 7 km/h en ventana de 2 s. El requisito de pico sostenido filtra baches (que duran ~1 muestra).
+- **Giro brusco:** cambio de rumbo GPS ≥ 25° a velocidad ≥ **45 km/h** (el umbral alto descarta esquinas normales de ciudad). NO depende del acelerómetro: se evalúa antes del filtro de pico longitudinal.
+- **Uso de celular:** `WidgetsBindingObserver.didChangeAppLifecycleState` → si la app pasa a `paused` durante un viaje activo (y NO está en PiP), tras un debounce de 2 s registra el evento. Volver antes de 2 s lo cancela.
+- GPS configurado con `AndroidSettings(intervalDuration: 500 ms)` para confirmar cambios de velocidad en frenadas/aceleraciones cortas.
+- Velocidad usada por el detector = `_velActual` (getter): GPS real o velocidad simulada en modo demo.
+
+### App Flutter — score por categoría y mapa de ruta
+- **Score por categoría de conducción** (tab "Mi conducción" en `ranking_screen.dart`): consume `GET /api/evento/usuario/{id}/estadisticas`. Muestra score general + 5 categorías (Velocidad, Frenado, Aceleración, Giros, Celular), cada una `max(0, 100 + impactos_negativos)`. Color verde/naranja/rojo por umbral.
+- **Mapa de ruta** (tab "Mapa" en `detalle_viaje_screen.dart`): `flutter_map` + tiles OSM (gratis, sin API key). Polilínea de la ruta **coloreada por agresividad** (azul/naranja/rojo según el delta de velocidad entre waypoints consecutivos), marcadores de inicio/fin, marcadores de eventos por tipo, chips de filtro y atajo "ver en mapa" desde cada evento.
+- **Recorrido GPS:** se captura un waypoint `[lat, lon, speed_kmh]` cada 10 s durante el viaje y se guarda en `flutter_secure_storage` al finalizar (clave `recorrido_{viajeId}`). SIN cambios de BD — el recorrido es local al dispositivo. Formato retrocompatible: viajes viejos (solo lat,lon) cargan con speed 0.
+
 ### App Flutter — pantallas
-- Login, registro, dashboard (stats + retos semanales + racha + nivel), historial de viajes, detalle de viaje, ranking con podio, racha de días, nivel/puntos, catálogo de premios, canje con QR, perfil, configuración.
+- Login, registro, dashboard (stats + retos semanales + racha + nivel), historial de viajes, detalle de viaje (General + Mapa), ranking (Leaderboard + Mi conducción), racha de días, nivel/puntos, catálogo de premios, canje con QR, perfil, configuración.
 
 ---
 
@@ -128,7 +146,9 @@ lib/
 
 > ⚠️ Los valores de `tipo` están enforzados por CHECK `chk_movpuntos_coherencia`. DEBEN coincidir EXACTO.
 
-Valores por señal en `Models/Constants/ImpactoEventos.cs`: Señal Respetada +10, Carril Mantenido/Distancia Segura +5, Señal Ignorada −20, Carril Invadido −15, Frenado Brusco −10, Exceso Velocidad −25, Peatón/Otro 0.
+Valores por evento en `Models/Constants/ImpactoEventos.cs`: Señal Respetada +10, Carril Mantenido/Distancia Segura +5, Señal Ignorada −20, Carril Invadido −15, Frenado Brusco −10, Aceleración Brusca −8, Giro Brusco −8, Uso Celular −15, Exceso Velocidad −25, Peatón/Otro 0.
+
+> Los tipos de telemática (`Frenado Brusco`, `Aceleración Brusca`, `Giro Brusco`, `Uso Celular`) están en el array `TiposValidos` de `EventoService` Y en el CHECK constraint `eventos.tipo_evento`. Al agregar un tipo nuevo hay que tocar AMBOS o Postgres lanza `23514`.
 
 ---
 
@@ -138,7 +158,7 @@ Valores por señal en `Models/Constants/ImpactoEventos.cs`: Señal Respetada +10
 - **Usuario:** `POST` (registro, público), `GET` (admin), `GET/{id}` `PUT/{id}` `DELETE/{id}` (dueño).
 - **Vehiculo / Camara:** CRUD + `PATCH/{id}/estado` (dueño), `GET` (admin).
 - **Viaje:** `POST` (iniciar), `PATCH/{id}/finalizar`, `PATCH/{id}/cancelar`, `DELETE/{id}`, gets.
-- **Evento:** `POST` (registrar + scoring), gets, `DELETE/{id}` (admin).
+- **Evento:** `POST` (registrar + scoring), gets, `GET/usuario/{id}/estadisticas` (score por categoría, dueño), `DELETE/{id}` (admin).
 - **Aliado / Premio:** lectura (autenticado), escritura (admin).
 - **Canje:** `POST`, `PATCH/{id}/anular`, `PATCH/qr/{codigo}` (admin), gets.
 - **PuntosUsuario / MovimientoPunto:** gets (dueño), `POST/acreditar` (admin).
@@ -169,10 +189,15 @@ Valores por señal en `Models/Constants/ImpactoEventos.cs`: Señal Respetada +10
 
 ## 9. Próximos pasos sugeridos
 
-1. **Frenado / aceleración brusca:** detector con `sensors_plus` (acelerómetro lineal) + validación con velocidad GPS. Umbral ~3.5 m/s². Nuevos TipoEvento en el backend: `"Frenado Brusco"` (ya tiene ImpactoEventos asignado), `"Aceleración Brusca"`.
-2. **Señales desde mapa (OpenStreetMap):** al iniciar un viaje, precarga los límites de velocidad y nodos con señales del recorrido vía Overpass API (gratuita). Complementa la cámara para vías sin señal visible.
-3. **Despliegue:** Dockerfile + docker-compose (API + PostgreSQL) + variables de entorno.
-4. **Backend (opcional):** tests de Camara/Aliado/Premio; paginación en endpoints de lista.
+**Ya HECHO esta sesión** (telemática tipo Airbag): frenado/aceleración/giro brusco por sensores, uso de celular, score por categoría en ranking, y mapa de ruta con eventos + coloreado por agresividad. Pendientes reales:
+
+1. **Merge `feature/sensores-telematica` → `main`** tras validar los nuevos detectores en celular real y afinar umbrales en carretera (los valores actuales son estimados, no calibrados en campo).
+2. **Cola offline (provincia sin internet):** los eventos hoy requieren internet para llegar al backend; en ruta Lima→provincia se pierden. Guardarlos en SQLite local y sincronizar al recuperar señal. La detección + alertas TTS YA funcionan offline; solo falta persistir+sincronizar el scoring.
+3. **Límite de velocidad por calle (OSM, Peru):** en vez de buscar `maxspeed` (cobertura ~20% en Peru), leer el `highway` de la vía vía Overpass API y mapear al límite legal del reglamento peruano (DS 016-2009-MTC): motorway/trunk 120, primary 80, secondary 60, tertiary/residential 50/30, fallback urbano 50. Con internet = preciso; sin internet = umbral fijo (~80 km/h). Genera evento `Exceso Velocidad`.
+4. **Tab "Calificación" en detalle de viaje:** score por categoría de ESE viaje puntual (hoy el score por categoría es histórico global en ranking). Los eventos ya están cargados en la pantalla; se calcula en cliente sin backend.
+5. **Puntaje real al finalizar viaje:** hoy el cliente manda `puntajeConduccion: 100` fijo; calcularlo en backend desde los eventos del viaje.
+6. **Despliegue:** Dockerfile + docker-compose (API + PostgreSQL) + variables de entorno.
+7. **Backend (opcional):** tests de Camara/Aliado/Premio; paginación en endpoints de lista.
 
 ---
 

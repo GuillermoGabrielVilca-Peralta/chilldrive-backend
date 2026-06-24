@@ -54,11 +54,13 @@ Connection string lives in `appsettings.Development.json` (gitignored) under `Co
 
 App at `D:\ChillDrive\Frontend\chilldrive_app`. Feature-complete, tested on physical device.
 
-**Key packages:** `dio` (HTTP), `flutter_secure_storage` (JWT), `ultralytics_yolo` (YOLO on-device), `geolocator` (GPS), `flutter_foreground_task` (persistent notification), `wakelock_plus`, `flutter_tts` (voice alerts), `qr_flutter`.
+**Key packages:** `dio` (HTTP), `flutter_secure_storage` (JWT + local route storage), `ultralytics_yolo` (YOLO on-device), `geolocator` (GPS), `sensors_plus` (accelerometer telematics), `flutter_map` + `latlong2` (OSM route map), `flutter_foreground_task` (persistent notification), `wakelock_plus`, `flutter_tts` (voice alerts), `qr_flutter`.
 
 **Config:** backend URL in `lib/config/app_config.dart` → `AppConfig.apiBaseUrl`. Single place to change per environment.
 
-**Architecture:** all HTTP via `ApiService` (`lib/api_service.dart`); setState only (no global state manager). Screens under `lib/screens/`.
+**Architecture:** all HTTP via `ApiService` (`lib/api_service.dart`); setState only (no global state manager). Screens under `lib/screens/`. `ApiService` is the data layer — it also wraps local `flutter_secure_storage` (token, usuario, viaje activo, recorrido GPS), so screens never touch storage directly.
+
+**Sensor telematics** (`lib/deteccion/detector_conduccion.dart`): all maneuver-detection logic (thresholds, sliding window, cooldowns, peak-sample filter) lives here, isolated from the UI. `deteccion_screen.dart` only wires the detector's callbacks → TTS + `POST /api/evento`. Keep new detection rules in this file, not in the screen. Braking/acceleration need a sustained accelerometer peak (≥150 ms) **plus** a GPS speed delta; cornering uses GPS heading only and is evaluated before the peak gate (a constant-speed turn has no longitudinal spike). New `TipoEvento` values must be added to BOTH `EventoService.TiposValidos` AND the `eventos.tipo_evento` CHECK constraint (else PG `23514`).
 
 **Gotchas:**
 - Foreground service class MUST be `com.pravera.flutter_foreground_task.service.ForegroundService` (v8.x — `ForegroundTaskService` doesn't exist).
