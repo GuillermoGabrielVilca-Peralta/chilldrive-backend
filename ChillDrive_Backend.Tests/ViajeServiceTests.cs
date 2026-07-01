@@ -123,6 +123,26 @@ public class ViajeServiceTests
     }
 
     [Fact]
+    public async Task Finalizar_CalculaPuntajeDesdeEventos_IgnorandoElDelCliente()
+    {
+        var viaje = new Viaje { Id = 1, UsuarioId = 7, Estado = "En Curso" };
+        _viajeRepo.Setup(r => r.GetById(1)).ReturnsAsync(viaje);
+        _eventoRepo.Setup(r => r.GetByViajeId(1)).ReturnsAsync(new List<Evento>
+        {
+            new() { TipoEvento = "Frenado Brusco",  ImpactoPuntaje = -10 },
+            new() { TipoEvento = "Señal Respetada", ImpactoPuntaje =  10 },
+        });
+
+        // El cliente manda 80, pero el servidor calcula el puntaje desde los eventos.
+        var (success, _) = await _sut.Finalizar(
+            1, new FinalizarViajeRequestDto { PuntajeConduccion = 80, DuracionMinutos = 30 });
+
+        Assert.True(success);
+        // Frenado = max(0,100-10)=90; otras 4 = 100 → promedio 98 (no el 80 del cliente).
+        Assert.Equal(98, viaje.PuntajeConduccion);
+    }
+
+    [Fact]
     public async Task Cancelar_ViajeEnCurso_MarcaCancelado()
     {
         var viaje = new Viaje { Id = 1, Estado = "En Curso" };

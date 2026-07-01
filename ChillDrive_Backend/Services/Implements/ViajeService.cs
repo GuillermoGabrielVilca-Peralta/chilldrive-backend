@@ -1,4 +1,5 @@
 using ChillDrive_Backend.Models;
+using ChillDrive_Backend.Models.Constants;
 using ChillDrive_Backend.Models.DTOs.Mappings;
 using ChillDrive_Backend.Models.DTOs.Requests;
 using ChillDrive_Backend.Models.DTOs.Response;
@@ -162,15 +163,21 @@ public class ViajeService : IViajeService
         var eventos     = await _eventoRepo.GetByViajeId(id);
         var puntosNetos = Math.Max(0, eventos.Sum(e => e.ImpactoPuntaje));
 
+        // Puntaje 0–100 de la IA calculado en el SERVIDOR desde los eventos del viaje
+        // (misma fórmula que EventoService y la app). Se ignora `dto.PuntajeConduccion`
+        // (el cliente enviaba 100 fijo): el puntaje no debe ser alterable desde la app.
+        var puntajeConduccion = ScoreConduccion.General(
+            eventos.Select(e => (e.TipoEvento, e.ImpactoPuntaje)));
+
         viaje.FechaFin          = dto.FechaFin;
         viaje.DistanciaKm       = dto.DistanciaKm;
         viaje.DuracionMinutos   = dto.DuracionMinutos;
-        viaje.PuntajeConduccion = dto.PuntajeConduccion;
+        viaje.PuntajeConduccion = puntajeConduccion;
         viaje.PuntosGanados     = puntosNetos;
         viaje.Estado            = "Finalizado";
 
         await _repo.Update(viaje);
-        return (true, $"Viaje finalizado. Duración: {duracion} min. Puntos del viaje: {puntosNetos}.");
+        return (true, $"Viaje finalizado. Duración: {duracion} min. Puntaje: {puntajeConduccion}/100. Puntos del viaje: {puntosNetos}.");
     }
 
     // -------------------------------------------------------------------------
