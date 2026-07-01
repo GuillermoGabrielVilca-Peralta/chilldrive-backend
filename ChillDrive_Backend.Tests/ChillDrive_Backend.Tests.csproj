@@ -23,4 +23,11 @@
         <ProjectReference Include="..\ChillDrive_Backend\ChillDrive_Backend.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- Da acceso al shared framework de ASP.NET Core (IConfiguration,
+             ConfigurationBuilder, AddInMemoryCollection) que AuthServiceTests usa.
+             El FrameworkReference del proyecto web NO fluye por el ProjectReference. -->
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
 </Project>

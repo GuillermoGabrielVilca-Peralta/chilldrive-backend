@@ -1,6 +1,7 @@
 using ChillDrive_Backend.Models;
 using ChillDrive_Backend.Models.DTOs.Requests;
 using ChillDrive_Backend.Repositories;
+using ChillDrive_Backend.Services;
 using ChillDrive_Backend.Services.Implements;
 using Microsoft.Extensions.Configuration;
 using Moq;
