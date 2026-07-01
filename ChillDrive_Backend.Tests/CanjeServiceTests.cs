@@ -72,6 +72,41 @@ public class CanjeServiceTests
     }
 
     [Fact]
+    public async Task Canjear_PremioVencido_Falla()
+    {
+        ConUsuario();
+        // FechaFin en el pasado → vencido.
+        ConPremio(new Premio
+        {
+            Id = 5, Nombre = "Café", Estado = "Disponible", Stock = 10, PuntosRequeridos = 100,
+            FechaFin = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-2)),
+        });
+
+        var (success, mensaje, _) = await _sut.Canjear(new CanjeRequestDto { UsuarioId = 1, PremioId = 5 });
+
+        Assert.False(success);
+        Assert.Contains("vencido", mensaje, StringComparison.OrdinalIgnoreCase);
+        _puntosRepo.Verify(r => r.DescontarPuntos(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Canjear_PremioAunNoActivo_Falla()
+    {
+        ConUsuario();
+        // FechaInicio en el futuro → aún no vigente.
+        ConPremio(new Premio
+        {
+            Id = 5, Nombre = "Café", Estado = "Disponible", Stock = 10, PuntosRequeridos = 100,
+            FechaInicio = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(2)),
+        });
+
+        var (success, _, _) = await _sut.Canjear(new CanjeRequestDto { UsuarioId = 1, PremioId = 5 });
+
+        Assert.False(success);
+        _puntosRepo.Verify(r => r.DescontarPuntos(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Canjear_Valido_DescuentaPuntosGeneraCanjeYLedger()
     {
         ConUsuario();

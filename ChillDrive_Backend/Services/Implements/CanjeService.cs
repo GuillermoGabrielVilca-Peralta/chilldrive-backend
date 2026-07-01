@@ -72,8 +72,8 @@ public class CanjeService : ICanjeService
         if (premio.Stock <= 0)
             return (false, "El premio está agotado.", null);
 
-        // Validar vigencia del premio
-        var hoy = DateOnly.FromDateTime(DateTime.UtcNow);
+        // Validar vigencia del premio (en fecha Perú, consistente con la lista de disponibles)
+        var hoy = FechaPeru.Hoy;
         if (premio.FechaFin.HasValue && premio.FechaFin < hoy)
             return (false, "El premio ha vencido.", null);
 
