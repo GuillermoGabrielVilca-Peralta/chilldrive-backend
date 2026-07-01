@@ -51,15 +51,78 @@ public class AuthService : IAuthService
         if (usuario.Estado != "Activo")
             return (false, "La cuenta está inactiva. Contacta al administrador.", null);
 
-        // Genera el token JWT con los datos del usuario como claims
-        var (token, expiracion) = GenerarToken(usuario);
+        // Genera el par de tokens: access (corto) + refresh (largo, para renovar sin re-login)
+        var (token, expiracion)               = GenerarAccessToken(usuario);
+        var (refreshToken, refreshExpiracion) = GenerarRefreshToken(usuario);
 
         // Actualiza el campo UltimoAcceso para auditoría
         usuario.UltimoAcceso = DateTime.UtcNow;
         await _usuarioRepo.Update(usuario);
 
         // El armado del DTO de respuesta vive en el mapper (no en el servicio).
-        return (true, "Login exitoso.", usuario.ToLoginResponse(token, expiracion));
+        return (true, "Login exitoso.",
+            usuario.ToLoginResponse(token, expiracion, refreshToken, refreshExpiracion));
+    }
+
+    // -------------------------------------------------------------------------
+    // REFRESCAR
+    // Recibe un refresh token, lo valida (firma, vigencia, audience de refresh y
+    // que sea realmente de tipo refresh), recarga al usuario para obtener claims
+    // frescos (rol, estado) y emite un nuevo par de tokens. El refresh se ROTA:
+    // cada renovación entrega uno nuevo, invalidando naturalmente al anterior por
+    // vencimiento. Es stateless (no hay tabla de tokens), igual que el resto del auth.
+    // -------------------------------------------------------------------------
+    public async Task<(bool success, string mensaje, LoginResponseDto? data)> Refrescar(string refreshToken)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            return (false, "Falta el refresh token.", null);
+
+        var jwtSettings = _config.GetSection("Jwt");
+        var secretKey   = jwtSettings["SecretKey"]!;
+
+        var parametros = new TokenValidationParameters
+        {
+            ValidateIssuer           = true,
+            ValidIssuer              = jwtSettings["Issuer"],
+            // Clave: se valida contra la audience de REFRESH, distinta a la de acceso.
+            ValidateAudience         = true,
+            ValidAudience            = jwtSettings["RefreshAudience"],
+            ValidateLifetime         = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            ClockSkew                = TimeSpan.Zero
+        };
+
+        ClaimsPrincipal principal;
+        try
+        {
+            principal = new JwtSecurityTokenHandler()
+                .ValidateToken(refreshToken, parametros, out _);
+        }
+        catch
+        {
+            return (false, "Refresh token inválido o expirado. Inicia sesión nuevamente.", null);
+        }
+
+        // Defensa en profundidad: además de la audience, exigimos la marca token_type=refresh.
+        if (principal.FindFirst("token_type")?.Value != "refresh")
+            return (false, "El token proporcionado no es un refresh token.", null);
+
+        var idClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(idClaim, out var usuarioId))
+            return (false, "Refresh token inválido.", null);
+
+        // Recarga al usuario: si fue desactivado desde la última sesión, se corta aquí.
+        var usuario = await _usuarioRepo.GetById(usuarioId);
+        if (usuario is null)
+            return (false, "Usuario no encontrado.", null);
+        if (usuario.Estado != "Activo")
+            return (false, "La cuenta está inactiva. Contacta al administrador.", null);
+
+        var (token, expiracion)               = GenerarAccessToken(usuario);
+        var (nuevoRefresh, refreshExpiracion) = GenerarRefreshToken(usuario);
+        return (true, "Token renovado.",
+            usuario.ToLoginResponse(token, expiracion, nuevoRefresh, refreshExpiracion));
     }
 
     // -------------------------------------------------------------------------
@@ -67,7 +130,7 @@ public class AuthService : IAuthService
     // Los claims son datos que viajan dentro del token y el servidor puede leer
     // sin ir a la BD. Incluimos lo mínimo necesario para la autorización.
     // -------------------------------------------------------------------------
-    private (string token, DateTime expiracion) GenerarToken(Usuario usuario)
+    private (string token, DateTime expiracion) GenerarAccessToken(Usuario usuario)
     {
         var jwtSettings     = _config.GetSection("Jwt");
         var secretKey       = jwtSettings["SecretKey"]!;
@@ -109,6 +172,44 @@ public class AuthService : IAuthService
         var token = new JwtSecurityToken(
             issuer:             issuer,
             audience:           audience,
+            claims:             claims,
+            expires:            expiracion,
+            signingCredentials: credentials
+        );
+
+        return (new JwtSecurityTokenHandler().WriteToken(token), expiracion);
+    }
+
+    // -------------------------------------------------------------------------
+    // GENERACIÓN DEL REFRESH TOKEN
+    // JWT de larga vida (RefreshExpirationDays) con AUDIENCE de refresh distinta a la
+    // de acceso, para que no pueda usarse como token de acceso en endpoints protegidos.
+    // Lleva solo el id del usuario y la marca token_type=refresh; los claims de sesión
+    // (rol, plan, etc.) se recalculan al refrescar recargando al usuario desde la BD.
+    // -------------------------------------------------------------------------
+    private (string token, DateTime expiracion) GenerarRefreshToken(Usuario usuario)
+    {
+        var jwtSettings     = _config.GetSection("Jwt");
+        var secretKey       = jwtSettings["SecretKey"]!;
+        var issuer          = jwtSettings["Issuer"]!;
+        var refreshAudience = jwtSettings["RefreshAudience"]!;
+        var expirationDays  = int.Parse(jwtSettings["RefreshExpirationDays"]!);
+
+        var key         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+            new Claim("token_type", "refresh"),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+
+        var expiracion = DateTime.UtcNow.AddDays(expirationDays);
+
+        var token = new JwtSecurityToken(
+            issuer:             issuer,
+            audience:           refreshAudience,
             claims:             claims,
             expires:            expiracion,
             signingCredentials: credentials

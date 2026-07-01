@@ -29,15 +29,22 @@ public static class UsuarioMappings
     /// con los datos básicos del usuario. El servicio pasa el token ya creado; el mapper solo
     /// estructura el DTO, no genera nada ni aplica reglas de negocio.
     /// </summary>
-    public static LoginResponseDto ToLoginResponse(this Usuario u, string token, DateTime expiracion) => new()
+    public static LoginResponseDto ToLoginResponse(
+        this Usuario u,
+        string token,
+        DateTime expiracion,
+        string refreshToken,
+        DateTime refreshExpiracion) => new()
     {
-        Token          = token,
-        Expiracion     = expiracion,
-        UsuarioId      = u.Id,
-        NombreCompleto = $"{u.Nombres} {u.Apellidos}",
-        Correo         = u.Correo,
-        TipoPlan       = u.TipoPlan      ?? "Gratuito",
-        TipoConductor  = u.TipoConductor ?? "Particular"
+        Token             = token,
+        Expiracion        = expiracion,
+        RefreshToken      = refreshToken,
+        RefreshExpiracion = refreshExpiracion,
+        UsuarioId         = u.Id,
+        NombreCompleto    = $"{u.Nombres} {u.Apellidos}",
+        Correo            = u.Correo,
+        TipoPlan          = u.TipoPlan      ?? "Gratuito",
+        TipoConductor     = u.TipoConductor ?? "Particular"
     };
 
     /// <summary>

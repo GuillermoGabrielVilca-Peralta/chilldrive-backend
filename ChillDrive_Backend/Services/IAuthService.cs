@@ -15,4 +15,10 @@ public interface IAuthService
     /// Devuelve el token junto con los datos básicos del usuario para la sesión.
     /// </summary>
     Task<(bool success, string mensaje, LoginResponseDto? data)> Login(LoginRequestDto dto);
+
+    /// <summary>
+    /// Valida un refresh token vigente y, si es correcto, emite un nuevo par de tokens
+    /// (access + refresh rotado). Evita que el usuario tenga que re-loguear cada día.
+    /// </summary>
+    Task<(bool success, string mensaje, LoginResponseDto? data)> Refrescar(string refreshToken);
 }

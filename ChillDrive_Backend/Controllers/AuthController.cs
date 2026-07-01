@@ -37,4 +37,18 @@ public class AuthController : ControllerBase
             return Unauthorized(new { mensaje });
         return Ok(data);
     }
+
+    // POST api/auth/refresh
+    // Recibe el refresh token guardado por el cliente y, si sigue vigente, devuelve un
+    // nuevo par de tokens (access + refresh rotado). Es [AllowAnonymous] porque se llama
+    // precisamente cuando el access token ya expiró; el refresh token es la credencial.
+    [AllowAnonymous]
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto dto)
+    {
+        var (success, mensaje, data) = await _service.Refrescar(dto.RefreshToken);
+        if (!success)
+            return Unauthorized(new { mensaje });
+        return Ok(data);
+    }
 }

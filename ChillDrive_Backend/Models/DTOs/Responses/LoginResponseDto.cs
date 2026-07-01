@@ -13,6 +13,12 @@ public class LoginResponseDto
     /// <summary>Fecha y hora UTC en que el token expira — el cliente puede usarla para renovar antes.</summary>
     public DateTime Expiracion     { get; set; }
 
+    /// <summary>Token de larga vida para renovar el acceso sin re-loguear (POST /api/auth/refresh).</summary>
+    public string   RefreshToken   { get; set; } = null!;
+
+    /// <summary>Fecha y hora UTC en que el refresh token expira (tras esto, re-login obligatorio).</summary>
+    public DateTime RefreshExpiracion { get; set; }
+
     // Datos de la sesión activa
     public int      UsuarioId      { get; set; }
     public string   NombreCompleto { get; set; } = null!;
