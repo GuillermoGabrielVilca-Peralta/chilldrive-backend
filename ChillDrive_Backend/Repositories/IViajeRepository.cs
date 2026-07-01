@@ -9,6 +9,7 @@ public interface IViajeRepository
     Task<(List<Viaje> items, int total)> GetByUsuarioIdPaginado(int usuarioId, int skip, int take);
     Task<List<Viaje>> GetByVehiculoId(int vehiculoId);
     Task<Viaje?>      GetById(int id);
+    Task<List<Viaje>> GetEnCursoByUsuario(int usuarioId);
     Task<int>         Add(Viaje viaje);
     Task              Update(Viaje viaje);
     Task              Delete(Viaje viaje);

@@ -51,6 +51,16 @@ public class ViajeRepository : IViajeRepository
         return await _context.Viajes.FindAsync(id);
     }
 
+    // Viajes abiertos ("En Curso") de un usuario, del más reciente al más antiguo.
+    // Sirve para garantizar un solo viaje activo: retomar el de hoy y cerrar los viejos.
+    public async Task<List<Viaje>> GetEnCursoByUsuario(int usuarioId)
+    {
+        return await _context.Viajes
+            .Where(v => v.UsuarioId == usuarioId && v.Estado == "En Curso")
+            .OrderByDescending(v => v.FechaInicio)
+            .ToListAsync();
+    }
+
     public async Task<int> Add(Viaje viaje)
     {
         await _context.Viajes.AddAsync(viaje);

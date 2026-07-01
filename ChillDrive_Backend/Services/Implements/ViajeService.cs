@@ -1,3 +1,4 @@
+using ChillDrive_Backend.Models;
 using ChillDrive_Backend.Models.DTOs.Mappings;
 using ChillDrive_Backend.Models.DTOs.Requests;
 using ChillDrive_Backend.Models.DTOs.Response;
@@ -64,8 +65,17 @@ public class ViajeService : IViajeService
         return v?.ToResponse();
     }
 
+    // Perú no tiene horario de verano: UTC-5 fijo. Se usa para decidir si un viaje
+    // abierto es "de hoy" (se retoma) o de un día anterior (se cierra).
+    private const int OffsetPeruHoras = -5;
+
     // -------------------------------------------------------------------------
-    // INICIAR VIAJE — crea el viaje en estado "En Curso"
+    // INICIAR VIAJE — un usuario solo puede tener UN viaje activo a la vez.
+    // Si ya tiene uno abierto:
+    //   - del mismo día (hora Perú) → se RETOMA ese viaje (no se crea otro).
+    //   - de un día anterior        → se CIERRA como Finalizado y se crea uno nuevo.
+    // Así nunca quedan varios "En Curso" colgados (p. ej. si la app se cerró sin
+    // finalizar), y un viaje puede pausarse y continuarse durante el día.
     // -------------------------------------------------------------------------
     public async Task<(bool success, string mensaje, int? id)> Iniciar(ViajeRequestDto dto)
     {
@@ -81,9 +91,43 @@ public class ViajeService : IViajeService
         if (vehiculo.UsuarioId != dto.UsuarioId)
             return (false, "El vehículo no pertenece al usuario.", null);
 
+        // Resolver el "un solo viaje activo".
+        var abiertos = await _repo.GetEnCursoByUsuario(dto.UsuarioId);
+        if (abiertos.Count > 0)
+        {
+            var hoy = DiaEnPeru(DateTime.UtcNow);
+            // El más reciente de hoy (la lista viene del más nuevo al más viejo).
+            var deHoy = abiertos.FirstOrDefault(v => DiaEnPeru(v.FechaInicio) == hoy);
+
+            // Cerrar todos los demás (días anteriores y duplicados extra del mismo día).
+            foreach (var viejo in abiertos.Where(v => v.Id != deHoy?.Id))
+                await CerrarViajeAbandonado(viejo);
+
+            if (deHoy is not null)
+                return (true, "Se retomó tu viaje en curso de hoy.", deHoy.Id);
+        }
+
         var id = await _repo.Add(dto.ToEntity());
         return (true, "Viaje iniciado correctamente.", id);
     }
+
+    // Cierra un viaje que quedó abierto (de un día anterior o duplicado): lo marca como
+    // Finalizado con el neto de puntos de sus eventos. Los puntos del conductor ya se
+    // aplicaron evento por evento, así que esto solo deja el viaje consistente en el historial.
+    private async Task CerrarViajeAbandonado(Viaje viaje)
+    {
+        var eventos = await _eventoRepo.GetByViajeId(viaje.Id);
+        // Nunca negativo: el constraint chk_viajes_puntos exige puntos_ganados >= 0
+        // (las infracciones ya se descontaron del saldo del conductor evento por evento).
+        viaje.PuntosGanados = Math.Max(0, eventos.Sum(e => e.ImpactoPuntaje));
+        viaje.FechaFin      = DateTime.UtcNow;
+        viaje.Estado        = "Finalizado";
+        await _repo.Update(viaje);
+    }
+
+    // Fecha calendario en hora de Perú (UTC-5) de un instante UTC.
+    private static DateOnly DiaEnPeru(DateTime utc) =>
+        DateOnly.FromDateTime(utc.AddHours(OffsetPeruHoras));
 
     // -------------------------------------------------------------------------
     // FINALIZAR VIAJE — endpoint específico de negocio.
@@ -112,9 +156,11 @@ public class ViajeService : IViajeService
             return (false, $"El viaje duró solo {duracion} min (mínimo {DuracionMinimaMinutos} min). Fue cancelado automáticamente y no cuenta para retos ni racha.");
         }
 
-        // Neto de puntos del viaje = suma de los impactos de sus eventos (puede ser negativo).
+        // Neto de puntos del viaje = suma de los impactos de sus eventos. Se guarda
+        // limitado a 0 (el constraint chk_viajes_puntos exige puntos_ganados >= 0); las
+        // infracciones ya se descontaron del saldo del conductor evento por evento.
         var eventos     = await _eventoRepo.GetByViajeId(id);
-        var puntosNetos = eventos.Sum(e => e.ImpactoPuntaje);
+        var puntosNetos = Math.Max(0, eventos.Sum(e => e.ImpactoPuntaje));
 
         viaje.FechaFin          = dto.FechaFin;
         viaje.DistanciaKm       = dto.DistanciaKm;

@@ -49,11 +49,47 @@ public class ViajeServiceTests
     {
         _usuarioRepo.Setup(r => r.GetById(1)).ReturnsAsync(new Usuario { Id = 1, Correo = "a@a.com" });
         _vehiculoRepo.Setup(r => r.GetById(2)).ReturnsAsync(new Vehiculo { Id = 2, UsuarioId = 1 });
+        _viajeRepo.Setup(r => r.GetEnCursoByUsuario(1)).ReturnsAsync(new List<Viaje>());
 
         var (success, _, _) = await _sut.Iniciar(new ViajeRequestDto { UsuarioId = 1, VehiculoId = 2 });
 
         Assert.True(success);
         _viajeRepo.Verify(r => r.Add(It.IsAny<Viaje>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Iniciar_ConViajeAbiertoDeHoy_LoRetomaSinCrearOtro()
+    {
+        _usuarioRepo.Setup(r => r.GetById(1)).ReturnsAsync(new Usuario { Id = 1, Correo = "a@a.com" });
+        _vehiculoRepo.Setup(r => r.GetById(2)).ReturnsAsync(new Vehiculo { Id = 2, UsuarioId = 1 });
+        // Ya hay un viaje abierto de hoy (id 5).
+        _viajeRepo.Setup(r => r.GetEnCursoByUsuario(1)).ReturnsAsync(new List<Viaje>
+        {
+            new() { Id = 5, UsuarioId = 1, Estado = "En Curso", FechaInicio = DateTime.UtcNow }
+        });
+
+        var (success, _, id) = await _sut.Iniciar(new ViajeRequestDto { UsuarioId = 1, VehiculoId = 2 });
+
+        Assert.True(success);
+        Assert.Equal(5, id);                                   // retoma el existente
+        _viajeRepo.Verify(r => r.Add(It.IsAny<Viaje>()), Times.Never); // no crea otro
+    }
+
+    [Fact]
+    public async Task Iniciar_ConViajeAbiertoDeAyer_LoCierraYCreaNuevo()
+    {
+        _usuarioRepo.Setup(r => r.GetById(1)).ReturnsAsync(new Usuario { Id = 1, Correo = "a@a.com" });
+        _vehiculoRepo.Setup(r => r.GetById(2)).ReturnsAsync(new Vehiculo { Id = 2, UsuarioId = 1 });
+        var viejo = new Viaje { Id = 9, UsuarioId = 1, Estado = "En Curso", FechaInicio = DateTime.UtcNow.AddDays(-1) };
+        _viajeRepo.Setup(r => r.GetEnCursoByUsuario(1)).ReturnsAsync(new List<Viaje> { viejo });
+        _eventoRepo.Setup(r => r.GetByViajeId(9)).ReturnsAsync(new List<Evento>());
+
+        var (success, _, _) = await _sut.Iniciar(new ViajeRequestDto { UsuarioId = 1, VehiculoId = 2 });
+
+        Assert.True(success);
+        Assert.Equal("Finalizado", viejo.Estado);             // el de ayer se cerró
+        _viajeRepo.Verify(r => r.Update(It.Is<Viaje>(v => v.Id == 9 && v.Estado == "Finalizado")), Times.Once);
+        _viajeRepo.Verify(r => r.Add(It.IsAny<Viaje>()), Times.Once); // y se creó uno nuevo
     }
 
     [Fact]
