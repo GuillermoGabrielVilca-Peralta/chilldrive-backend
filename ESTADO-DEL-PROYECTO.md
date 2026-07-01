@@ -207,9 +207,29 @@ Valores por evento en `Models/Constants/ImpactoEventos.cs`: Señal Respetada +10
 6. **Distancia real del viaje ✅ HECHO:** antes `finalizarViaje` mandaba `distanciaKm: 0` fijo y se perdía el dato aunque el viaje ya recolecta waypoints GPS. Ahora `lib/utils/geo.dart` calcula la distancia con **haversine** sobre el recorrido (`distanciaKmDeRecorrido`, helper puro y testeable, 6 tests) y se envía en `finalizarViaje`. Se muestra como métrica en `detalle_viaje_screen` y en cada tarjeta del `historial_screen`. Backend ya lo soportaba (`FinalizarViajeRequestDto.DistanciaKm [Range(0, 99999.99)]` → `viaje.DistanciaKm`). `flutter analyze` limpio.
 7. **URL del backend configurable en runtime ✅ HECHO:** antes la IP era `const` en `app_config.dart` → cada cambio de WiFi obligaba a recompilar. Ahora `AppConfig.apiBaseUrl` es un static mutable que `main()` carga desde almacenamiento (`cargarOverride`) antes de `runApp`; **Configuración → Conexión → Servidor backend** permite editarla con "Guardar y probar" (GET `/health`) y persiste. `logout()` la preserva pese al `deleteAll`. `flutter analyze` limpio.
 8. **Refresh token — sesión sin re-login diario ✅ HECHO:** el access token expiraba en 24h y solo existía `/login`. Ahora `AuthService.Login` devuelve access **+ refresh token** (JWT de 30 días, audience `ChillDriveRefresh` distinta a la de acceso → `Program.cs` lo rechaza en endpoints protegidos; marca `token_type=refresh`). `POST /api/auth/refresh` (`[AllowAnonymous]`) valida y emite un par **rotado**, recargando al usuario (corta si quedó inactivo). Stateless, sin tabla nueva. App: el interceptor `onError` de Dio **auto-renueva** en un 401 y reintenta la request (refresh coalescido para no disparar N a la vez). Tests nuevos: `AuthServiceTests` (6, auth no tenía ninguno). `flutter analyze` limpio; backend a compilar en Rider.
-9. **Puntaje real al finalizar viaje:** hoy el cliente manda `puntajeConduccion: 100` fijo; calcularlo en backend desde los eventos del viaje.
-10. **Despliegue:** Dockerfile + docker-compose (API + PostgreSQL) + variables de entorno.
-11. **Backend (opcional):** tests de Camara/Aliado/Premio; paginación en endpoints de lista.
+9. **Configurar el backend desde el login ✅ HECHO:** la IP solo se podía cambiar en Configuración (post-login), así que un celular que no conectaba quedaba trabado sin poder entrar. El diálogo de conexión se extrajo a `lib/widgets/dialogo_conexion.dart` (reutilizable) y se agregó un botón **"Configurar servidor"** en el login. Aplica el cambio sobre el `ApiService` recibido, así el mismo cliente que hace login apunta a la URL nueva. `configuracion_screen` usa el mismo diálogo (sin duplicar). `flutter analyze` limpio.
+10. **Puntaje real al finalizar viaje:** hoy el cliente manda `puntajeConduccion: 100` fijo; calcularlo en backend desde los eventos del viaje.
+11. **Despliegue:** Dockerfile + docker-compose (API + PostgreSQL) + variables de entorno.
+12. **Backend (opcional):** tests de Camara/Aliado/Premio; paginación en endpoints de lista.
+
+### Calibración de detección (iterativa, con feedback de manejo real)
+
+Los umbrales están aislados **a propósito** para poder ajustarlos sin tocar UI ni backend. Es un proceso *data-driven*: se maneja, se anota qué detecta de más / de menos, y se ajusta el número. No es una tarea que "se termina" — se afina con el uso. Parámetros y dónde tocarlos:
+
+**Maniobras bruscas — `lib/deteccion/detector_conduccion.dart`** (todo son `static const` al inicio de la clase):
+- `_umbralAcel = 3.5` m/s² (~0.35 g) — pico de acelerómetro para frenado/aceleración. Subir si detecta baches como frenados; bajar si no capta frenadas reales.
+- `_deltaVelMin = 7` km/h — cambio de velocidad GPS en la ventana para confirmar frenado/aceleración.
+- `_deltaRumboMin = 25`° y `_velMinimaGiro = 45` km/h — **giro brusco** (el que falta pulir): un giro salta si el rumbo GPS cambia ≥25° a ≥45 km/h. Si salta en curvas normales de carretera → subir grados o velocidad; si no capta giros agresivos → bajarlos.
+- `_velMinima = 12` km/h — piso para evaluar cualquier evento.
+- `_ventana = 2s`, `_ventanaMinima = 800ms`, `_cooldown = 6s` (por tipo), `_muestreo = 50ms` (20 Hz), `_muestrasMinimas = 3` (150 ms de pico sostenido, filtra baches).
+
+**Exceso de velocidad — `lib/deteccion/clasificador_eventos.dart`** (`senalAEvento`):
+- Hoy dispara `Exceso Velocidad` con `kmh > limite` (sin tolerancia). El **aviso de voz** usa `limite + 5` (en `_alertaAudio` de `deteccion_screen.dart`). Si querés margen antes de penalizar, agregar una tolerancia aquí.
+
+**Riesgo peatonal — `lib/deteccion/clasificador_eventos.dart`** (`mensajeRiesgoPeatonal`):
+- Altura del bounding box: `0.28` (cercano), `0.48` (muy cercano). Centrado: `0.20–0.80` del ancho. Velocidad: `>35` km/h (frena ahora), `>20` (zona transitada). Scoring por puntos (1/2/4). Tests en `test/clasificador_eventos_test.dart` — **actualizar los tests al cambiar umbrales**.
+
+**Puntos por evento — backend, `Models/Constants/ImpactoEventos.cs`** (cuánto suma/resta cada tipo).
 
 ---
 
