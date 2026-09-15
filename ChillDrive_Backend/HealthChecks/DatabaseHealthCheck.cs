@@ -23,14 +23,20 @@ public class DatabaseHealthCheck : IHealthCheck
     {
         try
         {
-            // CanConnectAsync hace un ping ligero a la BD sin ejecutar consultas de negocio.
-            return await _context.Database.CanConnectAsync(cancellationToken)
-                ? HealthCheckResult.Healthy("Base de datos accesible.")
-                : HealthCheckResult.Unhealthy("No se puede conectar a la base de datos.");
+            // OpenConnectionAsync deja que el error REAL (auth, SSL, red) se propague al catch,
+            // a diferencia de CanConnectAsync que lo oculta devolviendo false.
+            await _context.Database.OpenConnectionAsync(cancellationToken);
+            await _context.Database.CloseConnectionAsync();
+            return HealthCheckResult.Healthy("Base de datos accesible.");
         }
         catch (Exception ex)
         {
-            return HealthCheckResult.Unhealthy("Error al verificar la base de datos.", ex);
+            // Encadenar los mensajes internos: Npgsql suele poner el detalle (ej. SSL /
+            // password authentication failed) en la InnerException.
+            var detalle = ex.Message;
+            for (var inner = ex.InnerException; inner is not null; inner = inner.InnerException)
+                detalle += " | " + inner.Message;
+            return HealthCheckResult.Unhealthy($"No se puede conectar a la base de datos: {detalle}", ex);
         }
     }
 }
