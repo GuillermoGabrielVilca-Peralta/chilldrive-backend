@@ -20,7 +20,8 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 # Puerto interno de la API (HTTP). TLS lo termina el reverse proxy, no la app.
+# En Render (y otros PaaS) el puerto llega en la variable $PORT en tiempo de
+# ejecución; si no existe (local / docker-compose) cae a 8080. Se usa forma shell
+# en el ENTRYPOINT porque un ENV de Dockerfile no expande $PORT en runtime.
 EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
-
-ENTRYPOINT ["dotnet", "ChillDrive_Backend.dll"]
+ENTRYPOINT ["sh", "-c", "ASPNETCORE_URLS=http://+:${PORT:-8080} dotnet ChillDrive_Backend.dll"]

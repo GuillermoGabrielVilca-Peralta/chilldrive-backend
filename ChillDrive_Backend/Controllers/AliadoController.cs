@@ -53,7 +53,6 @@ public class AliadoController : ApiControllerBase
         return CreatedAtAction(nameof(GetById), new { id }, new { mensaje, id });
     }
 
-    // PUT api/aliado/5  → solo administradores
     [Authorize(Roles = Roles.Admin)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Put(int id, [FromBody] AliadoRequestDto dto)
@@ -64,7 +63,6 @@ public class AliadoController : ApiControllerBase
         return Ok(new { mensaje });
     }
 
-    // DELETE api/aliado/5  → solo administradores
     [Authorize(Roles = Roles.Admin)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
@@ -75,7 +73,6 @@ public class AliadoController : ApiControllerBase
         return Ok(new { mensaje });
     }
 
-    // PATCH api/aliado/5/estado  → activar / suspender aliado (solo administradores)
     [Authorize(Roles = Roles.Admin)]
     [HttpPatch("{id:int}/estado")]
     public async Task<IActionResult> CambiarEstado(int id, [FromBody] string nuevoEstado)
