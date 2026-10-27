@@ -198,6 +198,26 @@ public class ViajeService : IViajeService
     }
 
     // -------------------------------------------------------------------------
+    // ACTUALIZAR UBICACIÓN (monitoreo en vivo)
+    // -------------------------------------------------------------------------
+    // La app la envía cada ~10 s mientras el viaje está en curso. Solo se guarda la
+    // última posición; la hora es la de recepción en el servidor (UTC), que es la
+    // que el panel compara para saber si el vehículo sigue transmitiendo.
+    public async Task<(bool success, string mensaje)> ActualizarUbicacion(int id, UbicacionViajeRequestDto dto)
+    {
+        var viaje = await _repo.GetById(id);
+        if (viaje is null)
+            return (false, "Viaje no encontrado.");
+
+        if (viaje.Estado != "En Curso")
+            return (false, $"Solo se registra la ubicación de viajes en curso. Estado actual: '{viaje.Estado}'.");
+
+        dto.ApplyTo(viaje, DateTime.UtcNow);
+        await _repo.Update(viaje);
+        return (true, "Ubicación actualizada.");
+    }
+
+    // -------------------------------------------------------------------------
     // ELIMINAR
     // -------------------------------------------------------------------------
     public async Task<(bool success, string mensaje)> Eliminar(int id)

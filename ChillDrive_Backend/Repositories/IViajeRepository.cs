@@ -10,6 +10,7 @@ public interface IViajeRepository
     Task<List<Viaje>> GetByVehiculoId(int vehiculoId);
     Task<Viaje?>      GetById(int id);
     Task<List<Viaje>> GetEnCursoByUsuario(int usuarioId);
+    Task<List<Viaje>> GetActivosConUbicacion(DateTime ubicacionDesde);
     Task<int>         Add(Viaje viaje);
     Task              Update(Viaje viaje);
     Task              Delete(Viaje viaje);

@@ -27,4 +27,13 @@ public static class ViajeMappings
         Estado        = "En Curso",
         PuntosGanados = 0
     };
+
+    // Registra la última posición del viaje; `recibidaEn` la fija el servicio (UTC).
+    public static void ApplyTo(this UbicacionViajeRequestDto dto, Viaje viaje, DateTime recibidaEn)
+    {
+        viaje.UltimaLatitud        = dto.Latitud;
+        viaje.UltimaLongitud       = dto.Longitud;
+        viaje.UltimaVelocidadKmh   = dto.VelocidadKmh;
+        viaje.UltimaUbicacionFecha = recibidaEn;
+    }
 }

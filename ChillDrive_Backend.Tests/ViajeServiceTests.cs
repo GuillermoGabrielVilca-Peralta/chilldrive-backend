@@ -153,4 +153,52 @@ public class ViajeServiceTests
         Assert.True(success);
         Assert.Equal("Cancelado", viaje.Estado);
     }
+
+    // ── Monitoreo en vivo: ubicación ─────────────────────────────────────────
+
+    [Fact]
+    public async Task ActualizarUbicacion_ViajeInexistente_Falla()
+    {
+        _viajeRepo.Setup(r => r.GetById(1)).ReturnsAsync((Viaje?)null);
+
+        var (success, _) = await _sut.ActualizarUbicacion(
+            1, new UbicacionViajeRequestDto { Latitud = -12.05m, Longitud = -77.04m });
+
+        Assert.False(success);
+        _viajeRepo.Verify(r => r.Update(It.IsAny<Viaje>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ActualizarUbicacion_ViajeFinalizado_NoGuarda()
+    {
+        var viaje = new Viaje { Id = 1, Estado = "Finalizado" };
+        _viajeRepo.Setup(r => r.GetById(1)).ReturnsAsync(viaje);
+
+        var (success, _) = await _sut.ActualizarUbicacion(
+            1, new UbicacionViajeRequestDto { Latitud = -12.05m, Longitud = -77.04m });
+
+        Assert.False(success);
+        Assert.Null(viaje.UltimaLatitud);
+        _viajeRepo.Verify(r => r.Update(It.IsAny<Viaje>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ActualizarUbicacion_ViajeEnCurso_GuardaPosicionYHora()
+    {
+        var viaje = new Viaje { Id = 1, Estado = "En Curso" };
+        _viajeRepo.Setup(r => r.GetById(1)).ReturnsAsync(viaje);
+        var antes = DateTime.UtcNow;
+
+        var (success, _) = await _sut.ActualizarUbicacion(
+            1, new UbicacionViajeRequestDto { Latitud = -12.05m, Longitud = -77.04m, VelocidadKmh = 42.5m });
+
+        Assert.True(success);
+        Assert.Equal(-12.05m, viaje.UltimaLatitud);
+        Assert.Equal(-77.04m, viaje.UltimaLongitud);
+        Assert.Equal(42.5m,   viaje.UltimaVelocidadKmh);
+        // La hora la fija el servidor (UTC), no el cliente.
+        Assert.NotNull(viaje.UltimaUbicacionFecha);
+        Assert.True(viaje.UltimaUbicacionFecha >= antes);
+        _viajeRepo.Verify(r => r.Update(viaje), Times.Once);
+    }
 }

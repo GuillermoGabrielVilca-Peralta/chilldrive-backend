@@ -31,6 +31,18 @@ public partial class Viaje
 
     public string Estado { get; set; } = null!;
 
+    // Última posición enviada por la app durante el viaje (monitoreo en vivo).
+    public decimal? UltimaLatitud { get; set; }
+
+    public decimal? UltimaLongitud { get; set; }
+
+    public decimal? UltimaVelocidadKmh { get; set; }
+
+    /// <summary>
+    /// Momento (UTC) de la última posición recibida; el panel la usa para saber si el vehículo sigue transmitiendo
+    /// </summary>
+    public DateTime? UltimaUbicacionFecha { get; set; }
+
     public virtual ICollection<Evento> Eventos { get; set; } = new List<Evento>();
 
     public virtual ICollection<MovimientosPunto> MovimientosPuntos { get; set; } = new List<MovimientosPunto>();

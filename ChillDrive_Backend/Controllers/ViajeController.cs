@@ -118,6 +118,19 @@ public class ViajeController : ApiControllerBase
         return Ok(new { mensaje });
     }
 
+    // PATCH api/viaje/5/ubicacion  → la app reporta su posición durante el viaje
+    [HttpPatch("{id:int}/ubicacion")]
+    public async Task<IActionResult> ActualizarUbicacion(int id, [FromBody] UbicacionViajeRequestDto dto)
+    {
+        if (await NoEsMiViaje(id) is { } forbidden)
+            return forbidden;
+
+        var (success, mensaje) = await _service.ActualizarUbicacion(id, dto);
+        if (!success)
+            return BadRequest(new { mensaje });
+        return Ok(new { mensaje });
+    }
+
     // DELETE api/viaje/5
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)

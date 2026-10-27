@@ -13,5 +13,6 @@ public interface IViajeService
     Task<(bool success, string mensaje, int? id)>        Iniciar(ViajeRequestDto dto);
     Task<(bool success, string mensaje)>                 Finalizar(int id, FinalizarViajeRequestDto dto);
     Task<(bool success, string mensaje)>                 Cancelar(int id);
+    Task<(bool success, string mensaje)>                 ActualizarUbicacion(int id, UbicacionViajeRequestDto dto);
     Task<(bool success, string mensaje)>                 Eliminar(int id);
 }

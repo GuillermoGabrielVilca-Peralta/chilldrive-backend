@@ -567,6 +567,19 @@ public partial class ApplicationDbContext : DbContext
                 .HasColumnName("puntos_ganados");
             entity.Property(e => e.UsuarioId).HasColumnName("usuario_id");
             entity.Property(e => e.VehiculoId).HasColumnName("vehiculo_id");
+            entity.Property(e => e.UltimaLatitud)
+                .HasPrecision(10, 7)
+                .HasColumnName("ultima_latitud");
+            entity.Property(e => e.UltimaLongitud)
+                .HasPrecision(10, 7)
+                .HasColumnName("ultima_longitud");
+            entity.Property(e => e.UltimaVelocidadKmh)
+                .HasPrecision(6, 2)
+                .HasColumnName("ultima_velocidad_kmh");
+            entity.Property(e => e.UltimaUbicacionFecha)
+                .HasColumnType("timestamp without time zone")
+                .HasComment("Momento (UTC) de la última posición recibida; el panel la usa para saber si el vehículo sigue transmitiendo")
+                .HasColumnName("ultima_ubicacion_fecha");
 
             entity.HasOne(d => d.Usuario).WithMany(p => p.Viajes)
                 .HasForeignKey(d => d.UsuarioId)

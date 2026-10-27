@@ -61,6 +61,22 @@ public class ViajeRepository : IViajeRepository
             .ToListAsync();
     }
 
+    // Viajes en curso que enviaron su posición desde `ubicacionDesde` (monitoreo en vivo),
+    // con conductor, vehículo y eventos cargados para dibujarlos en el mapa del panel.
+    public async Task<List<Viaje>> GetActivosConUbicacion(DateTime ubicacionDesde)
+    {
+        return await _context.Viajes
+            .AsNoTracking()
+            .Include(v => v.Usuario)
+            .Include(v => v.Vehiculo)
+            .Include(v => v.Eventos)
+            .Where(v => v.Estado == "En Curso"
+                     && v.UltimaUbicacionFecha != null
+                     && v.UltimaUbicacionFecha >= ubicacionDesde)
+            .OrderByDescending(v => v.UltimaUbicacionFecha)
+            .ToListAsync();
+    }
+
     public async Task<int> Add(Viaje viaje)
     {
         await _context.Viajes.AddAsync(viaje);
