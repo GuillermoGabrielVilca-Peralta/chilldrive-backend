@@ -26,5 +26,26 @@ public partial class Suscripcione
 
     public DateTime FechaRegistro { get; set; }
 
+    /// <summary>
+    /// Prueba | Mensual | Trimestral | Anual | Puntos
+    /// </summary>
+    public string Plan { get; set; } = null!;
+
+    /// <summary>
+    /// Días de plan Profesional que otorga (incluye los meses de regalo)
+    /// </summary>
+    public int Dias { get; set; }
+
+    /// <summary>
+    /// Código que el conductor presenta al pagar en efectivo
+    /// </summary>
+    public string? CodigoPago { get; set; }
+
+    public int? PuntosUsados { get; set; }
+
+    public DateTime? FechaAprobacion { get; set; }
+
+    public string? MotivoRechazo { get; set; }
+
     public virtual Usuario Usuario { get; set; } = null!;
 }

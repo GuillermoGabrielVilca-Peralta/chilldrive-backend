@@ -378,8 +378,29 @@ public partial class ApplicationDbContext : DbContext
                 .HasColumnName("monto_soles");
             entity.Property(e => e.ReferenciaPago)
                 .HasMaxLength(100)
+                .HasComment("Número de operación de Yape informado por el conductor")
                 .HasColumnName("referencia_pago");
             entity.Property(e => e.UsuarioId).HasColumnName("usuario_id");
+            entity.Property(e => e.Plan)
+                .HasMaxLength(20)
+                .HasDefaultValueSql("'Mensual'::character varying")
+                .HasComment("Prueba | Mensual | Trimestral | Anual | Puntos")
+                .HasColumnName("plan");
+            entity.Property(e => e.Dias)
+                .HasDefaultValue(30)
+                .HasComment("Días de plan Profesional que otorga (incluye los meses de regalo)")
+                .HasColumnName("dias");
+            entity.Property(e => e.CodigoPago)
+                .HasMaxLength(12)
+                .HasComment("Código que el conductor presenta al pagar en efectivo")
+                .HasColumnName("codigo_pago");
+            entity.Property(e => e.PuntosUsados).HasColumnName("puntos_usados");
+            entity.Property(e => e.FechaAprobacion)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("fecha_aprobacion");
+            entity.Property(e => e.MotivoRechazo)
+                .HasMaxLength(255)
+                .HasColumnName("motivo_rechazo");
 
             entity.HasOne(d => d.Usuario).WithMany(p => p.Suscripciones)
                 .HasForeignKey(d => d.UsuarioId)

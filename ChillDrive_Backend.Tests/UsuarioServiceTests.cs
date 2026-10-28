@@ -96,6 +96,30 @@ public class UsuarioServiceTests
         _usuarioRepo.Verify(r => r.Update(It.IsAny<Usuario>()), Times.Once);
     }
 
+    // ── Seguridad: plan y estado no los decide el cliente ─────────────────────
+
+    [Fact]
+    public async Task Registrar_CuentaNueva_SiempreGratuitaYActiva()
+    {
+        await _sut.Registrar(DtoValido());
+
+        _usuarioRepo.Verify(r => r.Add(It.Is<Usuario>(u =>
+            u.TipoPlan == "Gratuito" && u.Estado == "Activo")), Times.Once);
+    }
+
+    [Fact]
+    public async Task Actualizar_NoCambiaPlanPagadoNiReactivaSuspendido()
+    {
+        var usuario = new Usuario { Id = 5, Correo = "ana@correo.com", TipoPlan = "Profesional", Estado = "Suspendido" };
+        _usuarioRepo.Setup(r => r.GetById(5)).ReturnsAsync(usuario);
+
+        var (success, _) = await _sut.Actualizar(5, DtoValido("ana@correo.com"));
+
+        Assert.True(success);
+        Assert.Equal("Profesional", usuario.TipoPlan);
+        Assert.Equal("Suspendido", usuario.Estado);
+    }
+
     // ── Eliminar ──────────────────────────────────────────────────────────────
 
     [Fact]

@@ -1,3 +1,4 @@
+using ChillDrive_Backend.Models.Constants;
 using ChillDrive_Backend.Models.DTOs.Requests;
 using ChillDrive_Backend.Models.DTOs.Response;
 
@@ -59,9 +60,10 @@ public static class UsuarioMappings
         PasswordHash  = passwordHash,   // hash BCrypt generado por PasswordService
         Telefono      = dto.Telefono,
         FotoPerfil    = dto.FotoPerfil,
-        TipoPlan      = dto.TipoPlan,
+        // Toda cuenta nueva empieza en Gratuito y activa; el cliente no decide esto.
+        TipoPlan      = PlanesSuscripcion.TipoGratuito,
         TipoConductor = dto.TipoConductor,
-        Estado        = dto.Estado
+        Estado        = "Activo"
     };
 
     /// <summary>
@@ -76,8 +78,8 @@ public static class UsuarioMappings
         usuario.PasswordHash  = passwordHash;   // hash BCrypt recalculado por el servicio
         usuario.Telefono      = dto.Telefono;
         usuario.FotoPerfil    = dto.FotoPerfil;
-        usuario.TipoPlan      = dto.TipoPlan;
         usuario.TipoConductor = dto.TipoConductor;
-        usuario.Estado        = dto.Estado;
+        // TipoPlan y Estado se conservan: editar el perfil no puede cambiar el plan pagado
+        // ni reactivar una cuenta suspendida.
     }
 }

@@ -33,22 +33,14 @@ public class UsuarioRequestDto
     [MaxLength(255, ErrorMessage = "La URL de foto no puede superar los 255 caracteres.")]
     public string? FotoPerfil    { get; set; }
 
-    // Planes del dominio (ver comentario de la columna tipo_plan en la BD):
-    // Gratuito = app básica | Profesional = 15 soles/mes
-    [Required(ErrorMessage = "El tipo de plan es obligatorio.")]
-    [RegularExpression("^(Gratuito|Profesional)$",
-        ErrorMessage = "TipoPlan debe ser 'Gratuito' o 'Profesional'.")]
-    public string  TipoPlan      { get; set; } = "Gratuito";
+    // TipoPlan y Estado NO se reciben del cliente: el plan solo cambia por una suscripción
+    // pagada y aprobada (SuscripcionService), y el estado solo lo cambia un administrador.
+    // Antes eran editables aquí y cualquiera podía darse el plan Profesional o reactivarse
+    // estando suspendido.
 
     // Valores exactos del CHECK chk_usuarios_conductor de la BD.
     [Required(ErrorMessage = "El tipo de conductor es obligatorio.")]
     [RegularExpression("^(Particular|Taxi|Delivery|Mototaxi|Otro)$",
         ErrorMessage = "TipoConductor debe ser: Particular, Taxi, Delivery, Mototaxi u Otro.")]
     public string  TipoConductor { get; set; } = "Particular";
-
-    // Valores exactos del CHECK chk_usuarios_estado de la BD.
-    [Required(ErrorMessage = "El estado es obligatorio.")]
-    [RegularExpression("^(Activo|Inactivo|Suspendido)$",
-        ErrorMessage = "Estado debe ser: Activo, Inactivo o Suspendido.")]
-    public string  Estado        { get; set; } = "Activo";
 }
