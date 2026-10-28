@@ -2,7 +2,7 @@
 --
 -- Crea 13 conductores ficticios con todo lo que el sistema muestra:
 --   vehículo + cámara, ~2 meses de viajes finalizados con eventos de la IA (con
---   coordenadas en Lima), puntaje por viaje, libro de puntos, nivel/ranking y
+--   coordenadas en la ciudad de Arequipa), puntaje por viaje, libro de puntos, nivel/ranking y
 --   suscripciones en todos los estados del ciclo de pago.
 --
 --   Contraseña de TODAS las cuentas demo:  Demo1234!
@@ -32,19 +32,19 @@ DELETE FROM usuarios WHERE id IN (SELECT id FROM demo_ids);
 -- riesgo = probabilidad de que un evento sea una infracción (define el ranking).
 CREATE TEMP TABLE demo_conductores ON COMMIT DROP AS
 SELECT * FROM (VALUES
-    ('Carla',    'Quispe Mamani',    'carlaquispe92@gmail.com',       '900000001', 'Particular', 'Gratuito',    'BKR-482', 'Toyota',     'Yaris',     2019, 'Blanco',   'Auto',  -12.0464, -77.0428, 34, 0.10, 75),
-    ('Diego',    'Ramos Flores',     'diego.ramosf@hotmail.com',      '900000002', 'Taxi',       'Profesional', 'C4T-719', 'Hyundai',    'Accent',    2018, 'Amarillo', 'Taxi',  -12.1211, -77.0297, 14, 0.18, 12),
-    ('Lucía',    'Torres Vega',      'luciatorres.v@gmail.com',       '900000003', 'Delivery',   'Gratuito',    '4821-LB', 'Honda',      'CB190R',    2021, 'Rojo',     'Moto',  -12.0890, -77.0505, 18, 0.20, 40),
-    ('Marco',    'Huamán Ccori',     'marcohuaman07@gmail.com',       '900000004', 'Mototaxi',   'Gratuito',    '7315-MC', 'Bajaj',      'RE 205',    2020, 'Azul',     'Moto',  -11.9900, -77.0600, 16, 0.26, 35),
-    ('Sofía',    'Mendoza Ríos',     'sofia.mendoza.rios@outlook.com','900000005', 'Taxi',       'Profesional', 'D7F-305', 'Kia',        'Rio',       2020, 'Plata',    'Taxi',  -12.0970, -77.0365, 42, 0.08, 70),
-    ('Jorge',    'Paredes León',     'jparedesleon@gmail.com',        '900000006', 'Delivery',   'Profesional', '6092-JP', 'Yamaha',     'FZ 2.0',    2022, 'Negro',    'Moto',  -12.0560, -77.0844, 30, 0.16, 65),
-    ('Rosa',     'Chávez Gutiérrez', 'rosachavez.g@hotmail.com',      '900000007', 'Particular', 'Gratuito',    'AWQ-157', 'Nissan',     'Versa',     2017, 'Gris',     'Auto',  -12.1450, -76.9900, 20, 0.19, 85),
-    ('Pedro',    'Salas Núñez',      'pedrosalas.taxi@gmail.com',     '900000008', 'Taxi',       'Gratuito',    'C9L-864', 'Chevrolet',  'Sail',      2016, 'Amarillo', 'Taxi',  -12.0300, -77.0150, 12, 0.33, 30),
-    ('Ana',      'Vargas Soto',      'anavargas.soto@gmail.com',      '900000009', 'Particular', 'Profesional', 'BTZ-640', 'Suzuki',     'Swift',     2021, 'Rojo',     'Auto',  -12.1100, -77.0050, 28, 0.11, 80),
-    ('Luis',     'Fernández Paz',    'luisfernandez.paz@gmail.com',   '900000010', 'Taxi',       'Profesional', 'D2M-938', 'Toyota',     'Corolla',   2019, 'Blanco',   'Taxi',  -12.0750, -77.0700, 40, 0.09, 140),
-    ('Milagros', 'Rojas Díaz',       'milagros.rojasd@hotmail.com',   '900000011', 'Delivery',   'Profesional', '5547-MR', 'Honda',      'Wave 110',  2022, 'Negro',    'Moto',  -12.1600, -77.0200, 26, 0.14, 50),
-    ('Kevin',    'Castillo Lázaro',  'kevincastillo.l@gmail.com',     '900000012', 'Mototaxi',   'Profesional', '8126-KC', 'TVS',        'King',      2021, 'Verde',    'Moto',  -11.9650, -77.0700, 22, 0.21, 45),
-    ('Valeria',  'Gómez Paucar',     'valegomez.taxi@outlook.com',    '900000013', 'Taxi',       'Profesional', 'C6V-271', 'Kia',        'Soluto',    2023, 'Amarillo', 'Taxi',  -12.0850, -76.9750, 44, 0.06, 120)
+    ('Carla',    'Quispe Mamani',    'carlaquispe92@gmail.com',       '900000001', 'Particular', 'Gratuito',    'VBK-482', 'Toyota',     'Yaris',     2019, 'Blanco',   'Auto',  -16.3880, -71.5430, 34, 0.10, 75),
+    ('Diego',    'Ramos Flores',     'diego.ramosf@hotmail.com',      '900000002', 'Taxi',       'Profesional', 'V4T-719', 'Hyundai',    'Accent',    2018, 'Amarillo', 'Taxi',  -16.3989, -71.5369, 14, 0.18, 12),
+    ('Lucía',    'Torres Vega',      'luciatorres.v@gmail.com',       '900000003', 'Delivery',   'Gratuito',    '4821-LB', 'Honda',      'CB190R',    2021, 'Rojo',     'Moto',  -16.3720, -71.5470, 18, 0.20, 40),
+    ('Marco',    'Huamán Ccori',     'marcohuaman07@gmail.com',       '900000004', 'Mototaxi',   'Gratuito',    '7315-MC', 'Bajaj',      'RE 205',    2020, 'Azul',     'Moto',  -16.3600, -71.5650, 16, 0.26, 35),
+    ('Sofía',    'Mendoza Ríos',     'sofia.mendoza.rios@outlook.com','900000005', 'Taxi',       'Profesional', 'V7F-305', 'Kia',        'Rio',       2020, 'Plata',    'Taxi',  -16.4230, -71.5230, 42, 0.08, 70),
+    ('Jorge',    'Paredes León',     'jparedesleon@gmail.com',        '900000006', 'Delivery',   'Profesional', '6092-JP', 'Yamaha',     'FZ 2.0',    2022, 'Negro',    'Moto',  -16.4280, -71.5020, 30, 0.16, 65),
+    ('Rosa',     'Chávez Gutiérrez', 'rosachavez.g@hotmail.com',      '900000007', 'Particular', 'Gratuito',    'VAW-157', 'Nissan',     'Versa',     2017, 'Gris',     'Auto',  -16.4230, -71.5620, 20, 0.19, 85),
+    ('Pedro',    'Salas Núñez',      'pedrosalas.taxi@gmail.com',     '900000008', 'Taxi',       'Gratuito',    'V9L-864', 'Chevrolet',  'Sail',      2016, 'Amarillo', 'Taxi',  -16.4040, -71.5100, 12, 0.33, 30),
+    ('Ana',      'Vargas Soto',      'anavargas.soto@gmail.com',      '900000009', 'Particular', 'Profesional', 'VTZ-640', 'Suzuki',     'Swift',     2021, 'Rojo',     'Auto',  -16.3950, -71.5230, 28, 0.11, 80),
+    ('Luis',     'Fernández Paz',    'luisfernandez.paz@gmail.com',   '900000010', 'Taxi',       'Profesional', 'V2M-938', 'Toyota',     'Corolla',   2019, 'Blanco',   'Taxi',  -16.3820, -71.5200, 40, 0.09, 140),
+    ('Milagros', 'Rojas Díaz',       'milagros.rojasd@hotmail.com',   '900000011', 'Delivery',   'Profesional', '5547-MR', 'Honda',      'Wave 110',  2022, 'Negro',    'Moto',  -16.4600, -71.5300, 26, 0.14, 50),
+    ('Kevin',    'Castillo Lázaro',  'kevincastillo.l@gmail.com',     '900000012', 'Mototaxi',   'Profesional', '8126-KC', 'TVS',        'King',      2021, 'Verde',    'Moto',  -16.4420, -71.5530, 22, 0.21, 45),
+    ('Valeria',  'Gómez Paucar',     'valegomez.taxi@outlook.com',    '900000013', 'Taxi',       'Profesional', 'V6C-271', 'Kia',        'Soluto',    2023, 'Amarillo', 'Taxi',  -16.4060, -71.5480, 44, 0.06, 120)
 ) AS d(nombres, apellidos, correo, telefono, tipo_conductor, tipo_plan, placa, marca, modelo, anio, color,
        tipo_vehiculo, base_lat, base_lon, viajes, riesgo, antiguedad_dias);
 
@@ -62,7 +62,7 @@ INSERT INTO camaras (vehiculo_id, nombre, posicion, estado, fecha_registro)
 SELECT v.id, 'Cámara del celular', 'Frontal', 'Conectada', v.fecha_registro + interval '5 minutes'
 FROM vehiculos v JOIN usuarios u ON u.id = v.usuario_id JOIN demo_conductores d ON d.correo = u.correo;
 
--- ── Viajes finalizados (entre 6:00 y 22:00 hora de Lima; se guardan en UTC = Lima + 5 h) ──
+-- ── Viajes finalizados (entre 6:00 y 22:00 hora de Perú; se guardan en UTC = Perú + 5 h) ──
 SELECT setseed(0.42);
 
 INSERT INTO viajes (usuario_id, vehiculo_id, fecha_inicio, fecha_fin, distancia_km, duracion_minutos, estado)
@@ -87,8 +87,8 @@ SELECT vj.id, c.id,
             ELSE (ARRAY['Señal Respetada','Carril Mantenido','Distancia Segura','Carril Mantenido','Distancia Segura','Peaton Detectado'])[1 + floor(random() * 6)::int]
        END,
        0,
-       round((d.base_lat + (random() - 0.5) * 0.06)::numeric, 7),
-       round((d.base_lon + (random() - 0.5) * 0.06)::numeric, 7),
+       round((d.base_lat + (random() - 0.5) * 0.035)::numeric, 7),
+       round((d.base_lon + (random() - 0.5) * 0.035)::numeric, 7),
        vj.fecha_inicio + make_interval(secs => random() * vj.duracion_minutos * 60)
 FROM viajes vj
 JOIN usuarios u  ON u.id = vj.usuario_id
