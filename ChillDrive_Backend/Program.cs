@@ -89,6 +89,7 @@ builder.Services.AddScoped<IMovimientoPuntoService, MovimientoPuntoService>();
 builder.Services.AddScoped<IRankingService,            RankingService>();
 builder.Services.AddScoped<ISuscripcionActivaService, SuscripcionActivaService>();
 builder.Services.AddScoped<IMonitoreoService,         MonitoreoService>();
+builder.Services.AddScoped<IRendimientoService,       RendimientoService>();
 
 // ─── Autenticación JWT ────────────────────────────────────────────────────────
 // Lee la configuración desde la sección "Jwt" (appsettings + User Secrets / variables de entorno).

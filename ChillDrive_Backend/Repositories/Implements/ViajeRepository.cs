@@ -77,6 +77,18 @@ public class ViajeRepository : IViajeRepository
             .ToListAsync();
     }
 
+    public async Task<List<Viaje>> GetFinalizadosDesde(DateTime inicioDesde)
+    {
+        return await _context.Viajes
+            .AsNoTracking()
+            .Include(v => v.Usuario)
+            .Include(v => v.Vehiculo)
+            .Include(v => v.Eventos)
+            .Where(v => v.Estado == "Finalizado" && v.FechaInicio >= inicioDesde)
+            .AsSplitQuery()
+            .ToListAsync();
+    }
+
     public async Task<int> Add(Viaje viaje)
     {
         await _context.Viajes.AddAsync(viaje);
