@@ -1,5 +1,5 @@
 -- Conductor demo nuevo: Omar André Huamani. Se registró hace 2 días (sin viajes aún),
--- yapeó el plan Trimestral y espera verificación → aparece en "Pagos por verificar".
+-- yapeó el plan Mensual y espera verificación → aparece en "Pagos por verificar".
 -- Contraseña: Demo1234! (igual que la flota demo). Se puede correr más de una vez.
 -- Teléfono 900000015: 02_limpiar_demo.sql también lo borra.
 
@@ -23,7 +23,7 @@ WHERE u.telefono = '900000015';
 
 INSERT INTO suscripciones (usuario_id, plan, dias, fecha_inicio, fecha_fin, monto_soles, metodo_pago,
                            estado, referencia_pago, fecha_registro)
-SELECT id, 'Trimestral', 120, CURRENT_DATE, CURRENT_DATE + 120, 45.00, 'Yape',
+SELECT id, 'Mensual', 30, CURRENT_DATE, CURRENT_DATE + 30, 15.00, 'Yape',
        'Pendiente', '41602745', now() - interval '6 minutes'
 FROM usuarios WHERE telefono = '900000015';
 
