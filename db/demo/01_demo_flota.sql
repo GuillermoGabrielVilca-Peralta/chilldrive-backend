@@ -35,7 +35,7 @@ CREATE TEMP TABLE demo_conductores ON COMMIT DROP AS
 SELECT * FROM (VALUES
     ('Carla',    'Quispe Mamani',    'carlaquispe92@gmail.com',       '900000001', 'Particular', 'Gratuito',    'VBK-482', 'Toyota',     'Yaris',     2019, 'Blanco',   'Auto',  ARRAY['ejercito','cerroColorado'], 34, 0.10, 75),
     ('Diego',    'Ramos Flores',     'diego.ramosf@hotmail.com',      '900000002', 'Taxi',       'Profesional', 'V4T-719', 'Hyundai',    'Accent',    2018, 'Amarillo', 'Taxi',  ARRAY['venezuela','uchumayo','parra'], 14, 0.18, 12),
-    ('Lucía',    'Torres Vega',      'luciatorres.v@gmail.com',       '900000003', 'Delivery',   'Gratuito',    '4821-LB', 'Honda',      'CB190R',    2021, 'Rojo',     'Moto',  ARRAY['cerroColorado','aviacion','ejercito'], 18, 0.20, 40),
+    ('Victoriano','Cahua Huamani',    'victorianocahua@gmail.com',     '900000003', 'Delivery',   'Gratuito',    '4821-VC', 'Honda',      'CB190R',    2021, 'Rojo',     'Moto',  ARRAY['cerroColorado','aviacion','ejercito'], 18, 0.20, 40),
     ('Marco',    'Huamán Ccori',     'marcohuaman07@gmail.com',       '900000004', 'Mototaxi',   'Gratuito',    '7315-MC', 'Bajaj',      'RE 205',    2020, 'Azul',     'Moto',  ARRAY['aviacion','cerroColorado'], 16, 0.26, 35),
     ('Sofía',    'Mendoza Ríos',     'sofia.mendoza.rios@outlook.com','900000005', 'Taxi',       'Profesional', 'V7F-305', 'Kia',        'Rio',       2020, 'Plata',    'Taxi',  ARRAY['dolores','lambramani','parra'], 42, 0.08, 70),
     ('Jorge',    'Paredes León',     'jparedesleon@gmail.com',        '900000006', 'Delivery',   'Profesional', '6092-JP', 'Yamaha',     'FZ 2.0',    2022, 'Negro',    'Moto',  ARRAY['jesus','dolores','lambramani'], 30, 0.16, 65),
@@ -252,8 +252,8 @@ SELECT u.id, s.plan, s.dias, CURRENT_DATE + s.ini, CURRENT_DATE + s.fin, s.monto
 FROM (VALUES
     -- Diego: está usando su prueba gratis (le quedan 20 días).
     ('diego.ramosf@hotmail.com',        'Prueba',     30, -10,  20,   0.00, 'Gratis',   'Activa',    NULL,       NULL,        NULL, interval '10 days',  NULL, interval '10 days'),
-    -- Lucía: yapeó el plan Mensual y espera verificación → "Pagos por verificar".
-    ('luciatorres.v@gmail.com',         'Mensual',    30,   0,  30,  15.00, 'Yape',     'Pendiente', '40817352', NULL,        NULL, NULL,                NULL, interval '2 hours'),
+    -- Victoriano: yapeó el plan Mensual y espera verificación → "Pagos por verificar".
+    ('victorianocahua@gmail.com',       'Mensual',    30,   0,  30,  15.00, 'Yape',     'Pendiente', '40817352', NULL,        NULL, NULL,                NULL, interval '2 hours'),
     -- Marco: pagará el Trimestral en efectivo con su código.
     ('marcohuaman07@gmail.com',         'Trimestral', 120,  0, 120,  45.00, 'Efectivo', 'Pendiente', NULL,       'CD-7K3QXP', NULL, NULL,                NULL, interval '1 day'),
     -- Sofía: plan Anual aprobado hace un mes.
