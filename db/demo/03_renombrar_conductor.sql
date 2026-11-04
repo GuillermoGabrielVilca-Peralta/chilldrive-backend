@@ -5,7 +5,7 @@ UPDATE usuarios
  WHERE telefono = '900000003';
 
 UPDATE vehiculos v
-   SET placa = '4821-VC'
+   SET placa = 'V8R-415'
   FROM usuarios u
  WHERE v.usuario_id = u.id AND u.telefono = '900000003';
 
