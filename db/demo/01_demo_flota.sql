@@ -6,7 +6,7 @@
 --   suscripciones en todos los estados del ciclo de pago.
 --
 --   Contraseña de TODAS las cuentas demo:  Demo1234!
---   Teléfonos 9000000xx: así se reconocen y se borran (db/demo/02_limpiar_demo.sql).
+--   Se reconocen por la contraseña demo compartida (db/demo/02_limpiar_demo.sql las borra).
 --
 -- Los viajes EN VIVO del mapa no se guardan aquí (desaparecen a los 10 min):
 -- los genera el simulador  Panel/scripts/simular-flota.mjs  durante la presentación.
@@ -19,7 +19,10 @@ BEGIN;
 -- ── Limpieza de una corrida anterior (incluye la demo vieja @demo.chilldrive.pe) ──
 CREATE TEMP TABLE demo_ids ON COMMIT DROP AS
 SELECT id FROM usuarios
-WHERE telefono LIKE '9000000__' OR correo LIKE '%@demo.chilldrive.pe';
+-- Las cuentas demo comparten la contraseña Demo1234! con este mismo hash (misma sal):
+-- esa es su marca. Una cuenta real nunca tiene este hash exacto.
+WHERE password_hash = '$2a$12$vYIauyQmZVRn7hZA9qKMte159Z2a/67htDmAf0.YDKsb/Tus16vMS'
+   OR telefono LIKE '9000000__' OR correo LIKE '%@demo.chilldrive.pe';
 
 DELETE FROM movimientos_puntos WHERE usuario_id IN (SELECT id FROM demo_ids);
 DELETE FROM eventos WHERE viaje_id IN (SELECT id FROM viajes WHERE usuario_id IN (SELECT id FROM demo_ids));
@@ -33,19 +36,19 @@ DELETE FROM usuarios WHERE id IN (SELECT id FROM demo_ids);
 -- rutas = avenidas por donde suele circular (ver demo_puntos).
 CREATE TEMP TABLE demo_conductores ON COMMIT DROP AS
 SELECT * FROM (VALUES
-    ('Carla',    'Quispe Mamani',    'carlaquispe92@gmail.com',       '900000001', 'Particular', 'Gratuito',    'AKR-482', 'Toyota',     'Yaris',     2019, 'Blanco',   'Auto',  ARRAY['ejercito','cerroColorado'], 34, 0.10, 75),
-    ('Diego',    'Ramos Flores',     'diego.ramosf@hotmail.com',      '900000002', 'Taxi',       'Profesional', 'C4T-719', 'Hyundai',    'Accent',    2018, 'Amarillo', 'Taxi',  ARRAY['venezuela','uchumayo','parra'], 14, 0.18, 12),
-    ('Victoriano','Cahua Huamani',    'victorianocahua@gmail.com',     '900000003', 'Delivery',   'Gratuito',    'D8R-415', 'Honda',      'CB190R',    2021, 'Rojo',     'Moto',  ARRAY['cerroColorado','aviacion','ejercito'], 18, 0.20, 40),
-    ('Marco',    'Huamán Ccori',     'marcohuaman07@gmail.com',       '900000004', 'Mototaxi',   'Gratuito',    'F5H-732', 'Bajaj',      'RE 205',    2020, 'Azul',     'Moto',  ARRAY['aviacion','cerroColorado'], 16, 0.26, 35),
-    ('Sofía',    'Mendoza Ríos',     'sofia.mendoza.rios@outlook.com','900000005', 'Taxi',       'Profesional', 'H7F-305', 'Kia',        'Rio',       2020, 'Plata',    'Taxi',  ARRAY['dolores','lambramani','parra'], 42, 0.08, 70),
-    ('Jorge',    'Paredes León',     'jparedesleon@gmail.com',        '900000006', 'Delivery',   'Profesional', 'B2J-609', 'Yamaha',     'FZ 2.0',    2022, 'Negro',    'Moto',  ARRAY['jesus','dolores','lambramani'], 30, 0.16, 65),
-    ('Rosa',     'Chávez Gutiérrez', 'rosachavez.g@hotmail.com',      '900000007', 'Particular', 'Gratuito',    'AWN-157', 'Nissan',     'Versa',     2017, 'Gris',     'Auto',  ARRAY['uchumayo','hunter'], 20, 0.19, 85),
-    ('Pedro',    'Salas Núñez',      'pedrosalas.taxi@gmail.com',     '900000008', 'Taxi',       'Gratuito',    'T9L-864', 'Chevrolet',  'Sail',      2016, 'Amarillo', 'Taxi',  ARRAY['jesus','selvaAlegre'], 12, 0.33, 30),
-    ('Ana',      'Vargas Soto',      'anavargas.soto@gmail.com',      '900000009', 'Particular', 'Profesional', 'CTZ-640', 'Suzuki',     'Swift',     2021, 'Rojo',     'Auto',  ARRAY['selvaAlegre','jesus'], 28, 0.11, 80),
-    ('Luis',     'Fernández Paz',    'luisfernandez.paz@gmail.com',   '900000010', 'Taxi',       'Profesional', 'M2K-938', 'Toyota',     'Corolla',   2019, 'Blanco',   'Taxi',  ARRAY['selvaAlegre','ejercito','venezuela'], 40, 0.09, 140),
-    ('Milagros', 'Rojas Díaz',       'milagros.rojasd@hotmail.com',   '900000011', 'Delivery',   'Profesional', 'P7D-554', 'Honda',      'Wave 110',  2022, 'Negro',    'Moto',  ARRAY['socabaya','hunter','lambramani'], 26, 0.14, 50),
-    ('Kevin',    'Castillo Lázaro',  'kevincastillo.l@gmail.com',     '900000012', 'Mototaxi',   'Profesional', 'X4N-812', 'TVS',        'King',      2021, 'Verde',    'Moto',  ARRAY['hunter','uchumayo','socabaya'], 22, 0.21, 45),
-    ('Valeria',  'Gómez Paucar',     'valegomez.taxi@outlook.com',    '900000013', 'Taxi',       'Profesional', 'V6C-271', 'Kia',        'Soluto',    2023, 'Amarillo', 'Taxi',  ARRAY['ejercito','venezuela','parra'], 44, 0.06, 120)
+    ('Carla',    'Quispe Mamani',    'carlaquispe92@gmail.com',       '976412358', 'Particular', 'Gratuito',    'AKR-482', 'Toyota',     'Yaris',     2019, 'Blanco',   'Auto',  ARRAY['ejercito','cerroColorado'], 34, 0.10, 75),
+    ('Diego',    'Ramos Flores',     'diego.ramosf@hotmail.com',      '951287604', 'Taxi',       'Profesional', 'C4T-719', 'Hyundai',    'Accent',    2018, 'Amarillo', 'Taxi',  ARRAY['venezuela','uchumayo','parra'], 14, 0.18, 12),
+    ('Victoriano','Cahua Huamani',    'victorianocahua@gmail.com',     '989486625', 'Delivery',   'Gratuito',    'D8R-415', 'Honda',      'CB190R',    2021, 'Rojo',     'Moto',  ARRAY['cerroColorado','aviacion','ejercito'], 18, 0.20, 40),
+    ('Marco',    'Huamán Ccori',     'marcohuaman07@gmail.com',       '943170582', 'Mototaxi',   'Gratuito',    'F5H-732', 'Bajaj',      'RE 205',    2020, 'Azul',     'Moto',  ARRAY['aviacion','cerroColorado'], 16, 0.26, 35),
+    ('Sofía',    'Mendoza Ríos',     'sofia.mendoza.rios@outlook.com','962835147', 'Taxi',       'Profesional', 'H7F-305', 'Kia',        'Rio',       2020, 'Plata',    'Taxi',  ARRAY['dolores','lambramani','parra'], 42, 0.08, 70),
+    ('Jorge',    'Paredes León',     'jparedesleon@gmail.com',        '917564230', 'Delivery',   'Profesional', 'B2J-609', 'Yamaha',     'FZ 2.0',    2022, 'Negro',    'Moto',  ARRAY['jesus','dolores','lambramani'], 30, 0.16, 65),
+    ('Rosa',     'Chávez Gutiérrez', 'rosachavez.g@hotmail.com',      '984203716', 'Particular', 'Gratuito',    'AWN-157', 'Nissan',     'Versa',     2017, 'Gris',     'Auto',  ARRAY['uchumayo','hunter'], 20, 0.19, 85),
+    ('Pedro',    'Salas Núñez',      'pedrosalas.taxi@gmail.com',     '935619842', 'Taxi',       'Gratuito',    'T9L-864', 'Chevrolet',  'Sail',      2016, 'Amarillo', 'Taxi',  ARRAY['jesus','selvaAlegre'], 12, 0.33, 30),
+    ('Ana',      'Vargas Soto',      'anavargas.soto@gmail.com',      '958741063', 'Particular', 'Profesional', 'CTZ-640', 'Suzuki',     'Swift',     2021, 'Rojo',     'Auto',  ARRAY['selvaAlegre','jesus'], 28, 0.11, 80),
+    ('Luis',     'Fernández Paz',    'luisfernandez.paz@gmail.com',   '921398475', 'Taxi',       'Profesional', 'M2K-938', 'Toyota',     'Corolla',   2019, 'Blanco',   'Taxi',  ARRAY['selvaAlegre','ejercito','venezuela'], 40, 0.09, 140),
+    ('Milagros', 'Rojas Díaz',       'milagros.rojasd@hotmail.com',   '967052381', 'Delivery',   'Profesional', 'P7D-554', 'Honda',      'Wave 110',  2022, 'Negro',    'Moto',  ARRAY['socabaya','hunter','lambramani'], 26, 0.14, 50),
+    ('Kevin',    'Castillo Lázaro',  'kevincastillo.l@gmail.com',     '944826917', 'Mototaxi',   'Profesional', 'X4N-812', 'TVS',        'King',      2021, 'Verde',    'Moto',  ARRAY['hunter','uchumayo','socabaya'], 22, 0.21, 45),
+    ('Valeria',  'Gómez Paucar',     'valegomez.taxi@outlook.com',    '973519046', 'Taxi',       'Profesional', 'V6C-271', 'Kia',        'Soluto',    2023, 'Amarillo', 'Taxi',  ARRAY['ejercito','venezuela','parra'], 44, 0.06, 120)
 ) AS d(nombres, apellidos, correo, telefono, tipo_conductor, tipo_plan, placa, marca, modelo, anio, color,
        tipo_vehiculo, rutas, viajes, riesgo, antiguedad_dias);
 
@@ -189,7 +192,7 @@ UPDATE eventos e SET impacto_puntaje = CASE e.tipo_evento
         WHEN 'Exceso Velocidad'   THEN -25
         ELSE 0 END
 FROM viajes v JOIN usuarios u ON u.id = v.usuario_id
-WHERE e.viaje_id = v.id AND u.telefono LIKE '9000000__';
+WHERE e.viaje_id = v.id AND u.correo IN (SELECT correo FROM demo_conductores);
 
 -- Puntaje del viaje: misma fórmula que ScoreConduccion.General (promedio de 5 categorías).
 UPDATE viajes v SET
@@ -200,7 +203,7 @@ UPDATE viajes v SET
         FROM unnest(ARRAY['Exceso Velocidad','Frenado Brusco','Aceleración Brusca','Giro Brusco','Uso Celular']) t),
     puntos_ganados = greatest(0, (SELECT coalesce(sum(e.impacto_puntaje), 0) FROM eventos e WHERE e.viaje_id = v.id))
 FROM usuarios u
-WHERE u.id = v.usuario_id AND u.telefono LIKE '9000000__';
+WHERE u.id = v.usuario_id AND u.correo IN (SELECT correo FROM demo_conductores);
 
 -- ── Libro de puntos: una fila por evento, igual que EventoService ───────────
 INSERT INTO movimientos_puntos (usuario_id, tipo, puntos, descripcion, viaje_id, fecha_movimiento)
@@ -209,7 +212,7 @@ SELECT v.usuario_id, CASE WHEN e.impacto_puntaje > 0 THEN 'Ganado' ELSE 'Ajuste'
 FROM eventos e
 JOIN viajes v   ON v.id = e.viaje_id
 JOIN usuarios u ON u.id = v.usuario_id
-WHERE u.telefono LIKE '9000000__' AND e.impacto_puntaje <> 0;
+WHERE u.correo IN (SELECT correo FROM demo_conductores) AND e.impacto_puntaje <> 0;
 
 -- Bono de referidos para que Carla pueda pagar con puntos y Ana haya podido hacerlo.
 INSERT INTO movimientos_puntos (usuario_id, tipo, puntos, descripcion, fecha_movimiento)
@@ -235,10 +238,10 @@ CROSS JOIN LATERAL (
            coalesce(sum(m.puntos) FILTER (WHERE m.puntos > 0), 0)::int AS historico
     FROM movimientos_puntos m WHERE m.usuario_id = u.id
 ) s
-WHERE u.telefono LIKE '9000000__';
+WHERE u.correo IN (SELECT correo FROM demo_conductores);
 
 UPDATE usuarios u SET ultimo_acceso = (SELECT max(v.fecha_fin) FROM viajes v WHERE v.usuario_id = u.id)
-WHERE u.telefono LIKE '9000000__';
+WHERE u.correo IN (SELECT correo FROM demo_conductores);
 
 -- ── Suscripciones: un escenario por conductor ───────────────────────────────
 -- Periodos [fecha_inicio, fecha_fin): vigente mientras hoy < fecha_fin.
@@ -290,5 +293,5 @@ SELECT u.nombres || ' ' || u.apellidos AS conductor, u.tipo_conductor, u.tipo_pl
        p.puntos_actuales, p.nivel,
        (SELECT string_agg(s.plan || ' ' || s.estado, ', ' ORDER BY s.fecha_registro) FROM suscripciones s WHERE s.usuario_id = u.id) AS suscripciones
 FROM usuarios u JOIN puntos_usuario p ON p.usuario_id = u.id
-WHERE u.telefono LIKE '9000000__'
+WHERE u.password_hash = '$2a$12$vYIauyQmZVRn7hZA9qKMte159Z2a/67htDmAf0.YDKsb/Tus16vMS'
 ORDER BY p.puntos_historicos DESC;
