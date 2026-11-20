@@ -231,8 +231,7 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 // ─── Pipeline ─────────────────────────────────────────────────────────────────
-if (app.Environment.IsDevelopment())
-{
+
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
@@ -240,7 +239,7 @@ if (app.Environment.IsDevelopment())
         // Swagger UI queda en /swagger (no en la raíz) para una URL clara.
         options.RoutePrefix = "swagger";
     });
-}
+
 
 // Debe ser el primero en el pipeline para capturar excepciones de todo lo que viene después.
 // En desarrollo devuelve el mensaje real de la excepción; en producción, uno genérico.
